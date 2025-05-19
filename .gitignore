@@ -1,0 +1,33 @@
+
+# Ignore Gradle build output
+/backend/java/build/
+
+# Ignore Maven build output
+/backend/java/target/
+
+# Ignore Node.js modules
+/frontend/node_modules/
+
+# Ignore Angular build output
+/frontend/dist/
+/frontend/.angular/
+/frontend/.vscode/
+.angular/cache
+
+
+# Ignore IntelliJ IDEA files
+.idea/
+
+# Ignore Eclipse files
+.classpath
+.project
+.settings/
+
+# Ignore any IDE-specific files
+*.iml
+*.ipr
+*.iws
+
+# Ignore system files
+.DS_Store
+Thumbs.db
