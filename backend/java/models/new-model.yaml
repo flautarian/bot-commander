@@ -1,0 +1,11 @@
+name: Local code
+version: 0.0.1
+schema: v1
+models:
+  - provider: local
+    model: my-local-ai-model
+    apiUrl: http://192.168.0.178:11434/v1
+    name: My Local AI Model
+    roles:
+      - chat
+      - edit

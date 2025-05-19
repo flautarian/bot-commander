@@ -1,0 +1,183 @@
+.container {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1000;
+    /* Adjust as necessary */
+    overflow: auto;
+    /* Allows scrolling if the content is larger than the viewport */
+}
+
+h2 {
+    text-align: center;
+}
+
+.inputs-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.container {
+    display: flex;
+    align-items: stretch;
+    margin: 0;
+    padding: 0;
+}
+
+.side {
+    flex-grow: 1;
+    flex-basis: 15em;
+    padding: 1em;
+    text-align: center;
+    max-height: 100%;
+    overflow-y: auto;
+    scrollbar-width: none;
+}
+
+.center {
+    flex-basis: 30em;
+    padding: 1em;
+    text-align: center;
+    max-height: 100%;
+    overflow-y: auto;
+    scrollbar-width: none;
+}
+
+.red {
+    background: red;
+}
+
+.green {
+    background: green;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: top;
+}
+
+.order-pendent {
+    color: yellow;
+}
+
+.order-delivered {
+    color: green;
+}
+
+.order-pendent-container {
+    background-color: rgb(255, 182, 72);
+    border-radius: 10px;
+    box-shadow: 0 5px 0px rgb(119, 77, 0);
+}
+
+.order-pendent-title {
+    font-weight: bold;
+    font-size: larger;
+    width: 100%;
+    height: 100%;
+    background-color: rgb(255, 153, 0);
+    border-radius: 10px 10px 0px 0px;
+}
+
+.order-pendent-details {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 5px;
+}
+
+.order-pendent-details-left {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    font-size: larger;
+    font-weight: 900;
+}
+
+.order-pendent-details-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    align-content: flex-start;
+    float: left;
+    width: 100%;
+    height: 100%;
+    font-size: larger;
+    font-weight: 900;
+}
+
+.order-pendent-details-button {
+    font-size: larger;
+    width: 100%;
+    height: 100%;
+    background: rgb(255, 199, 116);
+    border-radius: 0px 0px 10px 10px;
+    border: 5px;
+    cursor: pointer;
+}
+
+.order-pendent-details-button:hover {
+    animation: gradientShift 0.35s ease forwards;
+}
+
+
+.button-group-container {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    padding: 10px;
+}
+
+.option-title {
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.select-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    border: 2px solid #999999;
+    border-bottom: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: center;
+    transition: background-color 0.3s, border-color 0.3s;
+
+    margin-top: 0px;
+    margin-bottom: 5px;
+    box-shadow: 0 5px 0px rgba(0, 0, 0, 0.5);
+
+    height: -webkit-fill-available;
+    width: -webkit-fill-available;
+}
+
+.select-option:active {
+    margin-top: 5px;
+    margin-bottom: 0px;
+    box-shadow: 0 1px 0px rgba(0, 0, 0, 0.5);
+}
+
+.select-option img {
+    width: 60px;
+    /* Adjust image size */
+    height: 60px;
+    margin-bottom: 5px;
+}
+
+@keyframes gradientShift {
+    0% {
+        background: rgb(255, 199, 116);
+    }
+    100% {
+        background: rgb(255, 153, 0);
+        font-weight: bold;
+    }
+}
+
