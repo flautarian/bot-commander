@@ -1,0 +1,41 @@
+{
+    "app": {
+        "title": "Bot Manager",
+        "description": "Application for managing tasks in bots"
+    },
+    "header": {
+        "welcome": "Welcome to the bot management application"
+    },
+    "footer": {
+        "contact": "Contact",
+        "privacy": "Privacy Policy"
+    },
+    "dashboard": {
+        "projects": {
+            "title": "Projects",
+            "addProjectButton": "Add Project"
+        }
+    },
+    "utils": {
+        "loading": "Loading...",
+        "error": "Error",
+        "success": "Success",
+        "warning": "Warning",
+        "info": "Information",
+        "confirm": "Confirm",
+        "cancel": "Cancel",
+        "remove": "Remove",
+        "values": "Values",
+        "action_type": "Action Type",
+        "action": "Action",
+        "add_value": "Add Value",
+        "remove_value": "Remove Value",
+        "order_task": "Order Task",
+        "actionTypes": {
+            "exec_script": "Run Script",
+            "exec_script_result": "Script Result",
+            "exec_script_error": "Script Error",
+            "exec_script_desc": "Run a script in the bot"
+        }
+    }
+}

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FrontpageComponent } from './frontpage.component';
 import { RouterModule } from '@angular/router';
 import { ReactiveFormsModule } from '@angular/forms';
+import { TranslateModule } from '@ngx-translate/core';
 
 @NgModule({
   declarations: [
@@ -11,7 +12,8 @@ import { ReactiveFormsModule } from '@angular/forms';
   imports: [
     ReactiveFormsModule,
     CommonModule,
-    RouterModule.forChild([{ path: '', component: FrontpageComponent }])
+    RouterModule.forChild([{ path: '', component: FrontpageComponent }]),
+    TranslateModule, // or TranslateModule.forChild()
   ]
 })
 export class FrontpageModule { }

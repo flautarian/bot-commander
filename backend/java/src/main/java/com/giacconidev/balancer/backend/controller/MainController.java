@@ -18,8 +18,11 @@ public class MainController {
         this.kafkaProducer = kafkaProducer;
     }
 
-    @PostMapping("/process")
-    public ResponseEntity<String> processInput(@RequestBody TaskDto input) {
+    @PostMapping("/process/{botId}")
+    public ResponseEntity<String> processInput(@PathVariable String botId, @RequestBody TaskDto input) {
+        if(input.getTaskType() == null || input.getTaskType().isEmpty())
+            return ResponseEntity.badRequest().body("Action is required");
+        
         kafkaProducer.sendMessage(input);
         return ResponseEntity.ok("Command sent");
     }

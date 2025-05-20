@@ -10,6 +10,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class TaskDto {
-    private String action;
+    private String taskType;
     private Map<String, String> parameters;
 }

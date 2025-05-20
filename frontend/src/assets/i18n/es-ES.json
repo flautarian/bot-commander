@@ -1,0 +1,42 @@
+
+{
+    "app": {
+        "title": "Gestor de Bots",
+        "description": "Aplicación para gestionar tareas en bots"
+    },
+    "header": {
+        "welcome": "Bienvenido a la aplicación de gestión de bots",
+    },
+    "footer": {
+        "contact": "Contacto",
+        "privacy": "Política de privacidad"
+    },
+    "dashboard": {
+        "projects": {
+        "title": "Proyectos",
+        "addProjectButton": "Agregar Proyecto"
+        }
+    },
+    "utils": {
+        "loading": "Cargando...",
+        "error": "Error",
+        "success": "Éxito",
+        "warning": "Advertencia",
+        "info": "Información",
+        "confirm": "Confirmar",
+        "cancel": "Cancelar",
+        "remove": "Eliminar",
+        "values": "Valores",
+        "action_type": "Tipo de Acción",
+        "action": "Acción",
+        "add_value": "Agregar Valor",
+        "remove_value": "Eliminar Valor",
+        "order_task": "Ordenar Tarea",
+        "actionTypes":{
+            "exec_script": "Ejecutar Script",
+            "exec_script_result": "Resultado del Script",
+            "exec_script_error": "Error del Script",
+            "exec_script_desc": "Ejecutar un script en el bot"
+        }
+    }
+}

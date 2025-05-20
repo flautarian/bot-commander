@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { RouterOutlet } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
+import { TranslateService } from '@ngx-translate/core';
 
 
 
@@ -14,4 +15,10 @@ import { HttpClientModule } from '@angular/common/http';
   styleUrl: './app.component.css'
 })
 export class AppComponent {
+  private translate = inject(TranslateService);
+
+  constructor() {
+    this.translate.setDefaultLang('en-US');
+    this.translate.use('en-US');
+  }
 }

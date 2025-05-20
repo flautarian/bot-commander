@@ -7,7 +7,7 @@ import uuid
 def handle_callback(task):
     """ Handle the callback logic based on the consumed message. """
     print(f'Received order {task}')
-    if task['action'] == 'exec_script':
+    if task['taskType'] == 'exec_script':
         print(f'Received script execution order, proceeding to execute it')
         # Execute the task
         script_value = task['parameters']['value']
@@ -20,7 +20,7 @@ def handle_callback(task):
             result = e.stderr
         # Produce a callback message
         callback_task = {
-            'action': 'callback',
+            'taskType': 'callback',
             'parameters': {
                 'message': result.stdout
             }

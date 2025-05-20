@@ -1,13 +1,12 @@
 import { HttpClient } from '@angular/common/http';
-import { Component, OnInit } from '@angular/core';
-import { PizzaDto } from 'models/PizzaDto';
+import { Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { ActionDto } from 'models/ActionDto';
 
 import { Utils } from 'utils/utils'; // Import the utility class
 import { FormGroup, Validators, FormBuilder } from '@angular/forms';
 import { CurrencyPipe } from '@angular/common';
 import { environment } from 'environments/environment';
-import { StockWebSocketService } from '@services/StockWebSocketService';
-import { IngredientDto } from 'models/IngerdientDto';
+import { BotWebSocketService } from '@services/BotWebSocketService';
 import { ToastrService } from 'ngx-toastr';
 
 @Component({
@@ -16,198 +15,103 @@ import { ToastrService } from 'ngx-toastr';
     styleUrls: ['./frontpage.component.css']
 })
 export class FrontpageComponent implements OnInit {
+
     form!: FormGroup;
 
-    pizzas: any;
-    pizzaSizes: any;
-    pizzaIngredients: any;
+    bots: any;
+
+    actionTypes = Utils.getActionTypes();
+
+    isModalOpen = false;
 
     private currencyPipe: CurrencyPipe = new CurrencyPipe('en-EN');
 
-    formData: PizzaDto = {
-        customerName: '',
-        pizzaSize: '',
-        deliveryAddress: '',
-        status: 'PLACED',
-        emailAddress: '',
-        pizzaName: '',
-        extraIngredients: [],
-        price: 0.0
+    formData: ActionDto = {
+        selectedBots: [],
+        taskType: '',
+        parameters: [],
     };
 
     constructor(
         private fb: FormBuilder,
         private http: HttpClient,
-        private stockWebSocketService: StockWebSocketService,
+        private botWebSocketService: BotWebSocketService,
         private toastr: ToastrService) {
     }
 
     ngOnInit(): void {
         this.form = this.fb.group({
-            customerName: [this.formData.customerName, Validators.required],
-            pizzaSize: [this.formData.pizzaSize, Validators.required],
-            deliveryAddress: [this.formData.deliveryAddress, Validators.required],
-            emailAddress: [this.formData.emailAddress, [Validators.required, Validators.email]],
-            pizzaName: [this.formData.pizzaName, Validators.required],
-            extraIngredients: [this.formData.extraIngredients],
-            price: [this.formData.price, Validators.required]
+            selectedBots: [this.formData.selectedBots, Validators.minLength(1)],
+            taskType: [this.formData.taskType, Validators.required],
+            taskValue: [this.formData.parameters, Validators.required],
         });
 
-        this.pizzas = Utils.availablePizzas();
-        this.pizzaSizes = Utils.availablePizzaSizes();
-        this.pizzaIngredients = Utils.availablePizzaIngredients();
-
-        this.stockWebSocketService.getUpdates().subscribe(update => {
+        this.botWebSocketService.getUpdates().subscribe(update => {
             if (Array.isArray(update)) {
-                update.forEach(stockUpdate => {
-                    const index = this.pizzaIngredients.findIndex((ingredient: IngredientDto) => ingredient.value === stockUpdate.name);
-                    if (index !== -1) {
-                        this.pizzaIngredients[index].quantity = Number(stockUpdate.quantity);
-                    }
-                });
+                this.bots = update;
             }
             else {
-                let ingredientUpdate = update['ingredient'];
-                const index = this.pizzaIngredients.findIndex((ingredient: IngredientDto) => ingredient.value === ingredientUpdate.name);
-                if (index !== -1) {
-                    this.pizzaIngredients[index].quantity = Number(ingredientUpdate.quantity);
-                }
+                let index = this.bots.findIndex((bot: any) => bot.botId === update.botId);
+                if (index > -1)
+                    this.bots[index].results?.push(update.result);
+                else
+                    this.bots.push({
+                        botId: update.botId,
+                        results: [update.result]
+                    });
             }
         });
     }
 
     submitForm = () => {
         if (this.form.valid) {
-            const formData = { ...this.form.value };
-            this.postRequestData(formData);
+            this.postRequestData({ ...this.form.value });
         } else
             this.toastr.error("Error detected in fields validation, please check the form and try again");
     }
 
-    selectOption = (key: string, value: string, cssSuffix: string) => {
-        let element = document.getElementById(value + '-id') as HTMLElement;
-        this.form.patchValue({ [key]: value });
-        let options = document.querySelectorAll('.' + cssSuffix);
-        options.forEach(option => option.classList.remove('select-option-selected'));
-        if (element.className.indexOf(cssSuffix) < 0) {
-            let parent = element.parentNode as HTMLElement;
-            parent?.classList.add('select-option-selected');
+    addValue = () => {
+        this.formData?.parameters.push("");
+    }
+
+    removeValue = (index: number) => {
+        this.formData?.parameters.splice(index, 1);
+    }
+
+    selectBot = (botId: string) => {
+        if (this.formData?.selectedBots.includes(botId)) {
+            this.formData.selectedBots = this.formData?.selectedBots.filter((bot) => bot !== botId);
         }
-        else element.classList.add('select-option-selected');
-        /* RECALC PRICE */
-        this.recalculatePrice();
-    }
-
-    getNeededQuantity(ingredientName: string): number {
-        let neededQuantity = 1;
-        let pizzaSize = this.form.value["pizzaSize"];
-        if (!!pizzaSize)
-            neededQuantity = this.pizzaSizes.find((size: { value: string; }) => size.value === pizzaSize).price;
-        
-        let currentValues = this.form.value["extraIngredients"];
-        if (currentValues.includes(ingredientName)) {
-            let ingredient = this.pizzaIngredients.find((ingredient: IngredientDto) => ingredient.value === ingredientName) || null;
-            if (ingredient.quantity < neededQuantity) {
-                let element = document.getElementById(ingredientName + '-id') as HTMLElement;
-                currentValues = currentValues.filter((item: string) => item !== ingredientName);
-                this.form.patchValue({ "extraIngredients": currentValues });
-                this.toggleElementSelected(element);
-            }
+        else {
+            this.formData?.selectedBots.push(botId);
         }
-        return neededQuantity;
     }
 
-    selectIngredient = (value: string) => {
-        let element = document.getElementById(value + '-id') as HTMLElement;
-        let ingredient = this.pizzaIngredients.find((ingredient: IngredientDto) => ingredient.value === value) || null;
-
-        if (!!ingredient && ingredient.quantity < this.getNeededQuantity(value)) {
-            this.toastr.warning('Ingredient not available', `${value} is not available`);
-            return;
-        }
-
-        let currentValues = this.form.value["extraIngredients"];
-        if (currentValues.includes(value))
-            currentValues = currentValues.filter((item: string) => item !== value);
-        else
-            currentValues.push(value);
-
-        this.form.patchValue({ "extraIngredients": currentValues });
-
-        this.toggleElementSelected(element);
-        /* RECALC PRICE */
-        this.recalculatePrice();
+    openModal = () => {
+        this.isModalOpen = true;
+        this.formData = {
+            selectedBots: [],
+            taskType: '',
+            parameters: [],
+        };    
     }
 
-    toggleElementSelected = (element: HTMLElement) => {
-        if (element.className.indexOf('select-option-selected') < 0)
-            element.classList.add('select-option-selected');
-        else
-            element.classList.remove('select-option-selected');
-    }
-
-    getPizzaNameInfo(value: string): string {
-        let pizza = this.pizzas.find((pizza: { value: string, name: string }) => pizza.value === value) || null;
-        if (!!pizza)
-            return pizza.name + ' (' + this.currencyPipe.transform(pizza.price, 'EUR') + ')';
-        return '';
-    }
-
-    getPizzaSizeInfo(value: string): string {
-        let size = this.pizzaSizes.find((size: { value: string, name: string }) => size.value === value) || null;
-        if (!!size)
-            return size.name + ' (' + this.currencyPipe.transform(size.price, 'EUR') + ')';
-        return '';
-    }
-
-    getIngredientName(value: string): string {
-        let ingredient = this.pizzaIngredients.find((ingredient: { value: string, name: string }) => ingredient.value === value) || null;
-        if (!!ingredient)
-            return ingredient.name + ' (' + this.currencyPipe.transform(ingredient.price, 'EUR') + ')';
-        return '';
-    }
-
-    getPizzaDisplayInfo(value: string): string {
-        console.log(value);
-        let pizza = this.pizzas.find((pizza: { value: string, name: string }) => pizza.value === value) || null;
-        if (!!pizza)
-            return pizza.info;
-        return '';
-    }
-
-    recalculatePrice = () => {
-        let pizzaSize = this.form.value["pizzaSize"];
-        let pizzaName = this.form.value["pizzaName"];
-        let extraIngredients = this.form.value["extraIngredients"] as string[];
-        let price = 0;
-
-        if (!!pizzaSize)
-            price += this.pizzaSizes.find((size: { value: string; }) => size.value === pizzaSize).price;
-
-        if (!!pizzaName)
-            price += this.pizzas.find((pizza: { value: string; }) => pizza.value === pizzaName).price;
-
-        if (!!extraIngredients && extraIngredients.length > 0) {
-            extraIngredients.forEach(ingredient => {
-                price += this.pizzaIngredients.find((ing: { value: string; }) => ing.value === ingredient).price;
-            });
-        }
-
-        this.form.patchValue({ "price": price });
+    closeModal = () => {
+        this.isModalOpen = false;
     }
 
     /* 
       Post request of data
     */
-    postRequestData = (data: PizzaDto) => {
-        this.http.post<any>(`${environment.apiUrl}/order/placeorder`, data)
+    postRequestData = (data: ActionDto) => {
+        this.http.post<any>(`${environment.apiUrl}/api/v1/process`, data)
             .subscribe(
                 data => {
-                    this.toastr.success('Pizza ordered', "Pizza placed successfully!");
-                    window.location.href = '/frontpage';
+                    this.toastr.success('Action sent', "Action sent to bot " + data.selectedBots + " successfully");
+                    //window.location.href = '/frontpage';
                 },
                 error => {
-                    this.toastr.error('An error occurred', "Error occurred while placing the pizza, check console for more information");
+                    this.toastr.error('An error occurred', "Error occurred while sending an order to bot " + data.selectedBots + ", check console for more information");
                     console.error('Error:', error);
                     // Handle errors here
                 }

@@ -136,15 +136,6 @@ h2 {
     font-weight: bold;
 }
 
-.pizza-red-side-info {
-    top: 15px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    row-gap: 15px;
-    justify-content: space-between;
-}
-
 .input-text-container {
     display: flex;
     flex-direction: column;
@@ -191,6 +182,8 @@ h2 {
     flex-direction: row;
     flex-wrap: wrap;
     gap: 10px;
+    width: 100dvw;
+    height: 100dvh;
 }
 
 .side {
@@ -202,23 +195,6 @@ h2 {
     flex-basis: 30em;
     padding: 1em;
     text-align: center;
-}
-
-.red {
-    background: red;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-
-.green {
-    background: green;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: top;
 }
 
 @keyframes gradientShift {
