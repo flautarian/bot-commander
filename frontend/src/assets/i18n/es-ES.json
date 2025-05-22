@@ -2,10 +2,14 @@
 {
     "app": {
         "title": "Gestor de Bots",
-        "description": "Aplicación para gestionar tareas en bots"
+        "description": "Aplicación para gestionar tareas en bots",
+        "bot_list": "Lista de bots activos",
+        "bot_name": "Id de bot",
+        "bot_actions": "Informe de acciones",
+        "bot_actions_btn": "Ver Acciones"
     },
     "header": {
-        "welcome": "Bienvenido a la aplicación de gestión de bots",
+        "welcome": "Bienvenido a la aplicación de gestión de bots"
     },
     "footer": {
         "contact": "Contacto",

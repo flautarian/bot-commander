@@ -1,5 +1,5 @@
 export interface ActionDto {
   selectedBots: string[],
-  taskType: string,
+  actionType: string,
   parameters: string[],
 }

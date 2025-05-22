@@ -13,7 +13,7 @@ import { TranslateModule } from '@ngx-translate/core';
     ReactiveFormsModule,
     CommonModule,
     RouterModule.forChild([{ path: '', component: FrontpageComponent }]),
-    TranslateModule, // or TranslateModule.forChild()
+    TranslateModule,
   ]
 })
 export class FrontpageModule { }

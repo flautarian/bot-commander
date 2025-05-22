@@ -1,5 +1,26 @@
 # Services
 services:
+  # db service
+  commander-db:
+    build:
+      context: ./db
+      dockerfile: Dockerfile
+    container_name: commander-db
+    hostname: db
+    restart: always
+    healthcheck:
+      test: "mongosh -u superuser -p superuser --authenticationDatabase admin --quiet --eval 'rs.status().ok && rs.isMaster().ismaster'"
+      interval: 10s
+      timeout: 30s
+      start_period: 50s
+      retries: 10
+    ports:
+      - "27017:27017"
+    volumes:
+      - db_data:/data/commander-db
+    command: ["-f", "/etc/mongod.conf"]
+    networks:
+      - my-network
   # Zookeeper service
   commander-zookeeper:
     container_name: commander-zookeeper
@@ -56,11 +77,14 @@ services:
       - "8090:8090"
     environment:
       KAFKA_BOOTSTRAP_SERVERS: commander-kafka:9092
+      SPRING_DATA_MONGODB_URI: mongodb://botUser:botPassword@commander-db:27017/botCommander
       KAFKA_CONSUMER_GROUP_ID: apps
       KAFKA_AUTO_OFFSET_RESET: earliest
     networks:
       - my-network
     depends_on:
+      commander-db:
+        condition: service_healthy
       commander-zookeeper:
         condition: service_healthy
       commander-kafka:
@@ -81,6 +105,10 @@ services:
         condition: service_started
     networks:
       - my-network
+
+# Volumes definition
+volumes:
+  db_data:
 
 # Networks definition
 networks:

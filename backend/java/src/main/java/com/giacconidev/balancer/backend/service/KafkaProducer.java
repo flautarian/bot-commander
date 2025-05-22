@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 import com.giacconidev.balancer.backend.dto.TaskDto;
 
 @Service
-@Profile("!test") 
+@Profile("!test")
 public class KafkaProducer {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaProducer.class);
@@ -28,13 +28,14 @@ public class KafkaProducer {
         this.kafkaTemplate = kafkaTemplate;
     }
 
-    public void sendMessage(TaskDto event){
+    public void sendMessage(String botId, TaskDto event) {
         LOGGER.info(String.format("Send order => %s", event.toString()));
 
         // create order message
         Message<TaskDto> message = MessageBuilder
                 .withPayload(event)
                 .setHeader(KafkaHeaders.TOPIC, topic.name())
+                .setHeader("recipientId", botId)
                 .build();
         kafkaTemplate.send(message);
     }

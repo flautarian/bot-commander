@@ -11,18 +11,18 @@ adminDB.createUser({
 // Authenticate as the root user
 adminDB.auth('superuser', 'superuser');
 
-print("Creating pizzaapp database...");
-var pizzaDB = db.getSiblingDB('pizzaapp');
+print("Creating database...");
+var db = db.getSiblingDB('botCommander');
 
-print("Creating pizza collection...");
-pizzaDB.createCollection('pizza');
+print("Creating bot tasks collection...");
+db.createCollection('bots');
 
-print("Creating pizzaUser...");
-// Create the pizzaUser
-pizzaDB.createUser({
-    user: 'pizzaUser',
-    pwd: 'pizzaPassword',
-    roles: [{ role: 'readWrite', db: 'pizzaapp' }]
+print("Creating main user...");
+// Create the user
+db.createUser({
+    user: 'botUser',
+    pwd: 'botPassword',
+    roles: [{ role: 'readWrite', db: 'botCommander' }]
 });
 
 print("Initialization done!");

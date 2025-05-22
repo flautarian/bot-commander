@@ -3,6 +3,13 @@ package com.giacconidev.balancer.backend.service;
 import org.springframework.context.annotation.Profile;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.giacconidev.balancer.backend.dto.BotDto;
+import com.giacconidev.balancer.backend.dto.TaskDto;
+import com.giacconidev.balancer.backend.dto.UpdateTaskEventDto;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,8 +19,63 @@ public class KafkaConsumer {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConsumer.class);
 
-    @KafkaListener(topics = "callback")
-    public void listen(String message) {
-        LOGGER.info("Received Message in group 'apps-consumed': " + message);
+    private BotService botService;
+
+    private BotCommanderSocketHandler botCommanderSocketHandler;
+
+    public KafkaConsumer(BotService botService, BotCommanderSocketHandler botCommanderSocketHandler) {
+        this.botCommanderSocketHandler = botCommanderSocketHandler;
+        this.botService = botService;
     }
+
+    @KafkaListener(topics = "callback")
+    public void listenCallbackMessages(String message) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            TaskDto task = objectMapper.readValue(message, TaskDto.class);
+            // Process the task
+            if(task.getActionType().equals("callback")) {
+                // Handle the init action
+                String taskId = task.getParameters().get("taskId");
+                String botId = task.getParameters().get("groupId");
+                String result = task.getResult();
+                LOGGER.info("Update task received for bot: " + botId + " with taskId: " + taskId);
+                // Update the task in the bot
+                botService.updateTaskInBot(botId, taskId, result);
+                // Notify all connected clients
+                botCommanderSocketHandler.broadcastUpdate(new UpdateTaskEventDto(botId, taskId, result));
+                LOGGER.info("Task updated for bot: " + botId + " with taskId: " + taskId);
+            } else {
+                LOGGER.warn("Unknown action type: " + task.getActionType());
+            }
+        } catch (JsonProcessingException e) {
+            LOGGER.error("Error processing message: " + e.getMessage());
+        }
+        catch (Exception e) {
+            LOGGER.error("Fatal error processing message: " + e.getMessage());
+        }
+    }
+
+    @KafkaListener(topics = "init")
+    public void listenInitMessages(String message) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            TaskDto task = objectMapper.readValue(message, TaskDto.class);
+            // Process the task
+            if(task.getActionType().equals("init")) {
+                // Handle the init action
+                LOGGER.info("Init action received for task: " + task.getId());
+                String botId = task.getParameters().get("groupId");
+                botService.InitializeOrRefreshBot(botId);
+            } else {
+                LOGGER.warn("Unknown action type: " + task.getActionType());
+            }
+        } catch (JsonProcessingException e) {
+            LOGGER.error("Error processing message: " + e.getMessage());
+        }
+        catch (Exception e) {
+            LOGGER.error("Fatal error processing message: " + e.getMessage());
+        }
+    }
+
 }

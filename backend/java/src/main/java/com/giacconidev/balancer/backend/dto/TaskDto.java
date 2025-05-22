@@ -2,6 +2,9 @@ package com.giacconidev.balancer.backend.dto;
 
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.giacconidev.balancer.backend.model.Task;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -10,6 +13,31 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class TaskDto {
-    private String taskType;
+
+    @JsonProperty("id")
+    private String id;
+
+    @JsonProperty("actionType")
+    private String actionType;
+
+    @JsonProperty("parameters")
     private Map<String, String> parameters;
+
+    @JsonProperty("result")
+    private String result;
+
+    public TaskDto(Task task) {
+        this.id = task.getId();
+        this.actionType = task.getActionType();
+        this.parameters = task.getParameters();
+        this.result = task.getResult();
+    }
+
+    @SuppressWarnings("unchecked")
+    public TaskDto(Map<String, Object> body) {
+        this.id = String.valueOf(body.getOrDefault("id",""));
+        this.actionType = String.valueOf(body.getOrDefault("actionType",""));
+        this.parameters = (Map<String, String>) body.getOrDefault("parameters", Map.of());
+        this.result = String.valueOf(body.getOrDefault("result",""));
+    }
 }

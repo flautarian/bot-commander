@@ -1,7 +1,11 @@
 {
     "app": {
         "title": "Bot Manager",
-        "description": "Application for managing tasks in bots"
+        "description": "Application for managing tasks in bots",
+        "bot_list": "Active bot list",
+        "bot_name": "Bot name",
+        "bot_actions": "Actions report",
+        "bot_actions_btn": "Check actions"
     },
     "header": {
         "welcome": "Welcome to the bot management application"

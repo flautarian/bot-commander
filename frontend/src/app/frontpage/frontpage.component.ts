@@ -8,6 +8,8 @@ import { CurrencyPipe } from '@angular/common';
 import { environment } from 'environments/environment';
 import { BotWebSocketService } from '@services/BotWebSocketService';
 import { ToastrService } from 'ngx-toastr';
+import { BotDto } from 'models/BotDto';
+import { UpdateTaskEventDto } from 'models/UpdateTaskEventDto';
 
 @Component({
     selector: 'app-frontpage',
@@ -18,7 +20,38 @@ export class FrontpageComponent implements OnInit {
 
     form!: FormGroup;
 
-    bots: any;
+    bots: BotDto[] = [
+        {
+            id: "bot1",
+            name: "Example Bot 1",
+            status: "inactive",
+            tasks: [
+                {
+                    id: "task1",
+                    actionType: "restart",
+                    parameters: new Map<string, string>([
+                        ["reason", "maintenance"]
+                    ]),
+                    result: "pending"
+                }
+            ]
+        },
+        {
+            id: "bot2",
+            name: "Example Bot 2",
+            status: "inactive",
+            tasks: [
+                {
+                    id: "task2",
+                    actionType: "restart",
+                    parameters: new Map<string, string>([
+                        ["reason", "maintenance"]
+                    ]),
+                    result: "pending"
+                }
+            ]
+        }
+    ];
 
     actionTypes = Utils.getActionTypes();
 
@@ -28,7 +61,7 @@ export class FrontpageComponent implements OnInit {
 
     formData: ActionDto = {
         selectedBots: [],
-        taskType: '',
+        actionType: '',
         parameters: [],
     };
 
@@ -42,7 +75,7 @@ export class FrontpageComponent implements OnInit {
     ngOnInit(): void {
         this.form = this.fb.group({
             selectedBots: [this.formData.selectedBots, Validators.minLength(1)],
-            taskType: [this.formData.taskType, Validators.required],
+            actionType: [this.formData.actionType, Validators.required],
             taskValue: [this.formData.parameters, Validators.required],
         });
 
@@ -51,14 +84,14 @@ export class FrontpageComponent implements OnInit {
                 this.bots = update;
             }
             else {
-                let index = this.bots.findIndex((bot: any) => bot.botId === update.botId);
-                if (index > -1)
-                    this.bots[index].results?.push(update.result);
-                else
-                    this.bots.push({
-                        botId: update.botId,
-                        results: [update.result]
-                    });
+                // pass update to UpdateTaskEventDto
+                // this is a single update
+                let uteDto = update as UpdateTaskEventDto;
+                // find bot index
+                let index = this.bots.findIndex((bot: any) => bot.botId === uteDto.botId);
+                //add result to task index
+                let taskIndex = this.bots[index].tasks.findIndex((task: any) => task.taskId === uteDto.taskId);
+                this.bots[index].tasks[taskIndex].result = uteDto.result;
             }
         });
     }
@@ -78,6 +111,15 @@ export class FrontpageComponent implements OnInit {
         this.formData?.parameters.splice(index, 1);
     }
 
+    selectAllBots = () => {
+        if (this.formData?.selectedBots.length === this.bots.length) {
+            this.formData.selectedBots = [];
+        }
+        else {
+            this.formData.selectedBots = this.bots.map((bot: any) => bot.botId);
+        }
+    }
+
     selectBot = (botId: string) => {
         if (this.formData?.selectedBots.includes(botId)) {
             this.formData.selectedBots = this.formData?.selectedBots.filter((bot) => bot !== botId);
@@ -91,9 +133,9 @@ export class FrontpageComponent implements OnInit {
         this.isModalOpen = true;
         this.formData = {
             selectedBots: [],
-            taskType: '',
+            actionType: '',
             parameters: [],
-        };    
+        };
     }
 
     closeModal = () => {

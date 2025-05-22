@@ -36,11 +36,20 @@ class KafkaConsumerDaemon(threading.Thread):
                     continue
 
                 # Process the message
-                task = json.loads(msg.value().decode('utf-8'))
+                msg_decoded = msg.value().decode('utf-8')
+
+                #only attend message which header's recipientId is equal to groupId or recipientId is empty (broadcast)
+                if msg.headers() is not None:
+                    headers = dict(msg.headers())
+                    if 'recipientId' in headers and headers['recipientId'] != '' and headers['recipientId'].decode("utf-8") != self.groupId:
+                        print(f"Message ignored, recipientId {headers['recipientId']} does not match groupId {self.groupId}")
+                        continue
+
+                task = json.loads(msg_decoded)
 
                 # Execute the callback if needed
                 if self.callback:
-                    self.callback(task)
+                    self.callback(task, self.groupId)
 
         except Exception as e:
             print(f'Exception in consumer: {e}')
