@@ -27,6 +27,9 @@ public class BotDto {
     @JsonProperty("status")
     private String status = "";
 
+    @JsonProperty("os")
+    private String os = "";
+
     @JsonProperty("tasks")
     private ArrayList<TaskDto> tasks = new ArrayList<>();
 
@@ -34,6 +37,7 @@ public class BotDto {
         this.id = bot.getId();
         this.name = bot.getName();
         this.status = bot.getStatus();
+        this.os = bot.getOs();
         ArrayList<TaskDto> tasks = new ArrayList<>();
         for (Task task : Optional.ofNullable(bot.getTasks()).orElse(new ArrayList<>())) {
             tasks.add(new TaskDto(task));

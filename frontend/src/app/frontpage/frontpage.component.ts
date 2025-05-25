@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { ActionDto } from 'models/ActionDto';
 
 import { Utils } from 'utils/utils'; // Import the utility class
@@ -10,6 +10,7 @@ import { BotWebSocketService } from '@services/BotWebSocketService';
 import { ToastrService } from 'ngx-toastr';
 import { BotDto } from 'models/BotDto';
 import { UpdateTaskEventDto } from 'models/UpdateTaskEventDto';
+import { ActionTypeDto } from 'models/ActionTypeDto';
 
 @Component({
     selector: 'app-frontpage',
@@ -17,98 +18,144 @@ import { UpdateTaskEventDto } from 'models/UpdateTaskEventDto';
     styleUrls: ['./frontpage.component.css']
 })
 export class FrontpageComponent implements OnInit {
-
     form!: FormGroup;
+    payloadForm!: FormGroup;
 
-    bots: BotDto[] = [
-        {
-            id: "bot1",
-            name: "Example Bot 1",
-            status: "inactive",
-            tasks: [
-                {
-                    id: "task1",
-                    actionType: "restart",
-                    parameters: new Map<string, string>([
-                        ["reason", "maintenance"]
-                    ]),
-                    result: "pending"
-                }
-            ]
-        },
-        {
-            id: "bot2",
-            name: "Example Bot 2",
-            status: "inactive",
-            tasks: [
-                {
-                    id: "task2",
-                    actionType: "restart",
-                    parameters: new Map<string, string>([
-                        ["reason", "maintenance"]
-                    ]),
-                    result: "pending"
-                }
-            ]
-        }
-    ];
+    bots: BotDto[] = [];
+    selectedBot: BotDto = {} as BotDto;
+    paramEntries: Array<[string, any]> = [];
 
-    actionTypes = Utils.getActionTypes();
+    actionTypes: ActionTypeDto[] = [];
+    payloadTypes: string[] = ['python', 'javascript'];
 
     isModalOpen = false;
+    isActionModalOpen = false;
+    isPayloadGenModalOpen = false;
 
-    private currencyPipe: CurrencyPipe = new CurrencyPipe('en-EN');
+    private currencyPipe: CurrencyPipe = new CurrencyPipe('en-US');
 
     formData: ActionDto = {
         selectedBots: [],
         actionType: '',
-        parameters: [],
+        parameters: new Map<string, any>(),
+    };
+
+    payloadFormData: any = {
+        payloadType: '',
+        payloadUrl: '',
     };
 
     constructor(
         private fb: FormBuilder,
         private http: HttpClient,
         private botWebSocketService: BotWebSocketService,
-        private toastr: ToastrService) {
+        private toastr: ToastrService,
+        private cdr: ChangeDetectorRef) {
+        this.paramEntries = this.getFormDataParameterEntries();
     }
 
     ngOnInit(): void {
         this.form = this.fb.group({
             selectedBots: [this.formData.selectedBots, Validators.minLength(1)],
             actionType: [this.formData.actionType, Validators.required],
-            taskValue: [this.formData.parameters, Validators.required],
+            parameters: [this.formData.parameters, Validators.required],
         });
+        this.payloadForm = this.fb.group({
+            payloadType: [this.formData.selectedBots, Validators.required],
+            payloadUrl: [this.formData.actionType, Validators.required],
+        });
+        // Initialize formData with default values
+        this.actionTypes = Utils.getActionTypes();
+        // initialize default payload url from backend
+        this.getDefaultPayloadUrlTarget();
 
         this.botWebSocketService.getUpdates().subscribe(update => {
             if (Array.isArray(update)) {
+                // pass entire bot list arriving to system
                 this.bots = update;
             }
-            else {
-                // pass update to UpdateTaskEventDto
+            else if (Utils.instanceOfBotDto(update)) {
+                // pass entire bot arriving to system
+                let index = this.bots.findIndex((bot: BotDto) => bot.id === update.id);
+                if (index === -1) {
+                    this.bots.push(update);
+                }
+                else {
+                    this.bots[index] = update;
+                }
+            }
+            else if (Utils.instanceOfUpdateTaskEventDto(update)) {
+                // pass taskDto update arriving to system
                 // this is a single update
                 let uteDto = update as UpdateTaskEventDto;
                 // find bot index
-                let index = this.bots.findIndex((bot: any) => bot.botId === uteDto.botId);
+                let index = this.bots.findIndex(bot => bot.id == uteDto.botId);
                 //add result to task index
-                let taskIndex = this.bots[index].tasks.findIndex((task: any) => task.taskId === uteDto.taskId);
+                let taskIndex = this.bots[index].tasks.findIndex(task => task.id === uteDto.taskId);
                 this.bots[index].tasks[taskIndex].result = uteDto.result;
             }
         });
     }
 
     submitForm = () => {
+        const parametersObj: Record<string, any> = {};
+        this.formData.parameters.forEach((val: string, key: any) => {
+            parametersObj[key] = val;
+        });
+        this.form.setValue({
+            selectedBots: this.formData.selectedBots,
+            actionType: this.formData.actionType,
+            parameters: parametersObj
+        });
         if (this.form.valid) {
             this.postRequestData({ ...this.form.value });
         } else
             this.toastr.error("Error detected in fields validation, please check the form and try again");
     }
 
-    addValue = () => {
-        this.formData?.parameters.push("");
+
+    submitPayloadForm = () => {
+        this.payloadForm.setValue({
+            payloadType: this.payloadFormData.payloadType,
+            payloadUrl: this.payloadFormData.payloadUrl,
+        });
+        if (this.payloadForm.valid) {
+            this.emmitPayloadDownload({ ...this.payloadForm.value });
+        } else
+            this.toastr.error("Error detected in fields validation, please check the form and try again");
     }
 
-    removeValue = (index: number) => {
-        this.formData?.parameters.splice(index, 1);
+    getFormDataParameterEntries = () => {
+        return Array.from(this.formData.parameters.entries());
+    }
+
+
+    updateActionType = (event: any) => {
+        const actionTypeValue = event.target.value;
+        // we copy the map parameters from the actionTypes object
+        this.formData.parameters = new Map<string, any>();
+        let actionTypeDto = this.actionTypes.find((action: any) => action.value === actionTypeValue);
+        if (!!actionTypeDto && !!actionTypeDto.parameters) {
+            // Convert the parameters object to a Map
+            for (const key of actionTypeDto.parameters.keys()) {
+                let value = actionTypeDto.parameters.get(key);
+                console.log(key, value);
+                this.formData.parameters.set(key, value);
+            }
+            this.paramEntries = this.getFormDataParameterEntries();
+        }
+        this.cdr.detectChanges();
+    }
+
+    getParameterEntries = () => {
+        return Array.from(this.formData.parameters.entries());
+    }
+
+    updateMapValue(event: any, key: any) {
+        let val = event.target.value;
+        this.formData.parameters.set(key, val);
+        /* this.paramEntries = this.getFormDataParameterEntries();
+        this.cdr.detectChanges(); */
     }
 
     selectAllBots = () => {
@@ -116,7 +163,7 @@ export class FrontpageComponent implements OnInit {
             this.formData.selectedBots = [];
         }
         else {
-            this.formData.selectedBots = this.bots.map((bot: any) => bot.botId);
+            this.formData.selectedBots = this.bots.map((bot: BotDto) => bot.id);
         }
     }
 
@@ -132,30 +179,110 @@ export class FrontpageComponent implements OnInit {
     openModal = () => {
         this.isModalOpen = true;
         this.formData = {
-            selectedBots: [],
+            ...this.formData,
             actionType: '',
-            parameters: [],
+            parameters: new Map<string, any>(),
         };
     }
 
+    openActionsModal = (botId: string) => {
+        this.selectedBot = this.bots.find((bot: BotDto) => bot.id === botId) || {} as BotDto;
+        if (!!this.selectedBot)
+            this.isActionModalOpen = true;
+    }
+
+    openPayloadGenModal = () => {
+        this.isPayloadGenModalOpen = true;
+    }
+
+
     closeModal = () => {
         this.isModalOpen = false;
+    }
+
+    closeActionsModal = () => {
+        this.isActionModalOpen = false;
+    }
+
+    closePayloadGenModal = () => {
+        this.isPayloadGenModalOpen = false;
+    }
+
+    cleanAndClosePayloadGenModal() {
+        this.isPayloadGenModalOpen = false;
+        this.payloadFormData = {
+            payloadType: '',
+            payloadUrl: '',
+        };
+        this.payloadForm.reset();
+    }
+
+    cleanAndCloseActionModal() {
+        this.isActionModalOpen = false;
+        this.formData = {
+            selectedBots: [],
+            actionType: '',
+            parameters: new Map<string, any>(),
+        };
+        this.form.reset();
+        this.paramEntries = this.getFormDataParameterEntries();
+        this.cdr.detectChanges();
     }
 
     /* 
       Post request of data
     */
     postRequestData = (data: ActionDto) => {
-        this.http.post<any>(`${environment.apiUrl}/api/v1/process`, data)
+        this.http.post<any>(`${environment.apiUrl}/process`, data)
             .subscribe(
                 data => {
                     this.toastr.success('Action sent', "Action sent to bot " + data.selectedBots + " successfully");
-                    //window.location.href = '/frontpage';
+                    // Clean and close modal
+                    this.cleanAndCloseActionModal();
                 },
                 error => {
                     this.toastr.error('An error occurred', "Error occurred while sending an order to bot " + data.selectedBots + ", check console for more information");
                     console.error('Error:', error);
-                    // Handle errors here
+                }
+            );
+    }
+    // Payload request default url from backend
+    getDefaultPayloadUrlTarget = () => {
+        this.http.get<any>(`${environment.apiUrl}/payload/url`)
+            .subscribe(
+                data => {
+                    this.payloadFormData.payloadUrl = data.payloadUrl;
+                },
+                error => {
+                    this.toastr.error('An error occurred', "Error occurred while obtaining default payload url, check console for more information");
+                    console.error('Error:', error);
+                }
+            );
+    }
+    // Payload download request
+    emmitPayloadDownload = (data: any) => {
+        this.http.post(`${environment.apiUrl}/payload/download`, data, { responseType: 'blob' })
+            .subscribe(
+                (response: Blob) => {
+                    // Create a download link for the blob
+                    const blob = new Blob([response]);
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    document.body.appendChild(a);
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = 'payload.zip'; // Set the file name here
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+
+                    this.toastr.success('Payload download initiated', "Payload download initiated successfully");
+                    // Clean and close modal
+                    this.cleanAndClosePayloadGenModal();
+                },
+                error => {
+                    this.toastr.error('An error occurred', "Error occurred while downloading payload, check console for more information");
+                    console.error('Error:', error);
                 }
             );
     }

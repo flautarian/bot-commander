@@ -5,6 +5,7 @@ import com.giacconidev.balancer.backend.dto.BotDto;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Profile;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
@@ -18,6 +19,7 @@ import reactor.core.publisher.Flux;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 @Component
+@Profile("!test") 
 public class BotCommanderSocketHandler implements WebSocketHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(BotCommanderSocketHandler.class);

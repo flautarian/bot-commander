@@ -21,5 +21,6 @@ public class Bot {
     private String id;
     private String name;
     private String status;
+    private String os;
     private ArrayList<Task> tasks = new ArrayList<>();
 }

@@ -3,49 +3,123 @@
   <div class="bot-container">
     <h2>{{"app.title" | translate}}</h2>
     <h3>{{"app.description" | translate}}</h3>
-    <div class="bot-list-container" style="align-items: center;">
-    <h3>{{"app.bot_list" | translate}}</h3>
-      <table class="bot-list">
-        <thead >
-          <tr class="bot-list-header">
-            <th>{{"utils.selected" | translate}} <input type="checkbox" (click)="selectAllBots()" ></th>
-            <th>{{"app.bot_name" | translate}}</th>
-            <th>{{"app.bot_actions" | translate}}</th>
+    <div class="bot-inner-container">
+      <div class="bot-inner-header">
+        <h3>{{"app.bot_list" | translate}}</h3>
+        <!-- right button to open modal -->
+        <button class="create-payload-btn" (click)="openPayloadGenModal()">
+          {{ "app.create_actions_btn" | translate }}
+        </button>
+      </div>
+      <div class="bot-list-container">
+        <table class="bot-list">
+          <thead>
+            <tr class="bot-list-header">
+              <th style="width: 10%;"><input type="checkbox" (click)="selectAllBots()"></th>
+              <th>{{"app.bot_name" | translate}}</th>
+              <th style="width: 20%;">{{"app.os" | translate}}</th>
+              <th>{{"app.bot_actions" | translate}}</th>
+            </tr>
+          </thead>
+          <tbody class="bot-list-body">
+            <tr *ngFor="let bot of bots">
+              <td style="width: 10%;"><input type="checkbox" (click)="selectBot(bot.id)"
+                  [checked]="formData.selectedBots.includes(bot.id)">
+              </td>
+              <td>{{bot.id}}</td>
+              <td style="width: 20%;">{{bot.os || 'unknown'}}</td>
+              <td>
+                <button (click)="openActionsModal(bot.id)">{{ "app.bot_actions_btn" | translate }}</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <button class="create-action-btn" (click)="openModal()" [disabled]="formData.selectedBots.length === 0">{{
+        "app.create_actions_btn" | translate }}</button>
+    </div>
+  </div>
+</div>
+<!-- ACTION CREATION MODAL -->
+<div class="modal-overlay" (click)="closeModal()" *ngIf="isModalOpen">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <h2>{{ "app.create_actions_btn" | translate }}</h2>
+    <div class="create-action-form-container">
+      <form [formGroup]="form" class="create-action-form">
+        <div class="flex-column">
+          <label for="actionType">{{ "utils.action_type" | translate }}</label>
+          <select id="actionType" formControlName="actionType" [(ngModel)]="formData.actionType"
+            (change)="updateActionType($event)">
+            <option value="" selected>{{ "utils.select_action_type" | translate }}</option>
+            <option *ngFor="let action of actionTypes" [value]="action.value">{{ action.name | translate }}</option>
+          </select>
+        </div>
+
+        <div class="flex-column">
+          <div *ngIf="paramEntries.length > 0">
+            <label>Parameters:</label>
+            <div *ngFor="let entry of paramEntries; let i = index">
+              <label>{{ entry[0] }}:</label>
+              <input type="text" [value]="entry[1]" (input)="updateMapValue($event, entry[0])" />
+            </div>
+          </div>
+        </div>
+        <button type="submit" (click)="submitForm()">{{ "app.submit_action_btn" | translate }}</button>
+      </form>
+    </div>
+    <button (click)="closeModal()">{{ "utils.close" | translate }}</button>
+  </div>
+</div>
+<!-- BOT TASKS VIEWER MODAL -->
+<div class="modal-overlay" (click)="closeActionsModal()" *ngIf="isActionModalOpen">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <h2>{{ "utils.order_task" | translate }}</h2>
+    <div class="form-group">
+      <table class="task-list-container">
+        <thead class="task-list-header">
+          <tr class="">
+            <th>{{"utils.action_type" | translate}}</th>
+            <th>{{"app.parameters" | translate}}</th>
+            <th>{{"app.result" | translate}}</th>
           </tr>
         </thead>
-        <tbody class="bot-list-body">
-          <tr *ngFor="let bot of bots">
-            <td><input type="checkbox" (click)="selectBot(bot.id)" [checked]="formData.selectedBots.includes(bot.id)" ></td>
-            <td>{{bot.id}}</td>
+        <tbody class="task-list-body">
+          <tr *ngFor="let task of selectedBot.tasks">
+            <td style="text-align: center;">{{('utils.actionTypes.' + task.actionType) | translate}}</td>
             <td>
-              <button (click)="openModal()">{{ "app.bot_actions_btn" | translate }}</button>
+              <pre>{{task.parameters | json}}</pre>
             </td>
+            <td>{{task.result}}</td>
           </tr>
         </tbody>
       </table>
     </div>
+    <button (click)="closeActionsModal()">{{ "utils.close" | translate }}</button>
   </div>
 </div>
 
-<div class="modal-overlay" (click)="closeModal()" *ngIf="isModalOpen">
+<!-- BOT PAYLOAD GENERATOR MODAL -->
+<div class="modal-overlay" (click)="closePayloadGenModal()" *ngIf="isPayloadGenModalOpen">
   <div class="modal-content" (click)="$event.stopPropagation()">
-    <h2>{{ "utils.order_task" | translate }}</h2>
-    <form [formGroup]="form">
-      <div class="form-group">
-        <label for="name">{{ "utils.action_type" | translate }}</label>
-        <select id="actionType" formControlName="actionType">
-          <option *ngFor="let action of actionTypes" [value]="action.value">{{ "action.name" | translate }}</option>
-        </select>
-
-        <label for="name">{{ "utils.values" | translate }}:</label>
-        <div *ngFor="let val of formData.parameters; let i = index">
-          <input type="text" [formControlName]="'value' + i" placeholder="Value {{i + 1}}" [value]="val" />
-          <button type="button" (click)="removeValue(i)">{{ "utils.remove_value" | translate }}</button>
+    <h2>{{ "payload.title" | translate }}</h2>
+    <div class="form-group">
+      <form [formGroup]="payloadForm" class="payload-form">
+        <div class="flex-column">
+          <label for="payloadType">{{ "payload.payload_type" | translate }}</label>
+          <select id="payloadType" formControlName="payloadType" [(ngModel)]="payloadFormData.payloadType">
+            <option value="" selected>{{ "utils.select_payload_type" | translate }}</option>
+            <option *ngFor="let payload of payloadTypes" [value]="payload">{{ payload }}</option>
+          </select>
         </div>
-        <button type="button" (click)="addValue()">{{ "utils.add_value" | translate }}</button>
-      </div>
-      <button type="submit" (click)="submitForm()">{{ "utils.submit" | translate }}</button>
-    </form>
-    <button (click)="closeModal()">{{ "utils.submit" | translate }}</button>
+
+        <div class="flex-column">
+          <label for="payloadUrl">{{ "payload.url_target" | translate }}</label>
+          <input id="payloadUrl" formControlName="payloadUrl" [(ngModel)]="payloadFormData.payloadUrl"/>
+        </div>
+
+        <button type="submit" (click)="submitPayloadForm()">{{ "app.submit_payload_btn" | translate }}</button>
+      </form>
+    </div>
+    <button (click)="closePayloadGenModal()">{{ "utils.close" | translate }}</button>
   </div>
 </div>

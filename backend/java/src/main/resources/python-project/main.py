@@ -1,20 +1,27 @@
+import platform
 from kafka_producer import produce_message
 from kafka_consumer import KafkaConsumerDaemon
 import argparse
 import subprocess
 import uuid
+import os 
 
 def handle_callback(task, group_id):
     """ Handle the callback logic based on the consumed message. """
     print(f'Received order {task}')
-    if task['actionType'] == 'exec_script':
+    if task['actionType'] == 'exec_script' or task['actionType'] == 'os_exec_script':
         print(f'Received script execution order, proceeding to execute it')
         # Execute the task
         script_value = task['parameters']['value']
         try:
             # Execute the script
-            result = subprocess.run(script_value, shell=True, check=True, text=True, capture_output=True)
-            print(f'Script output: {result.stdout}')
+            if task['actionType'] == 'exec_script':
+                # For exec_script, use subprocess.run
+                result = subprocess.run(script_value, shell=True, check=True, text=True, capture_output=True)
+                print(f'Script output: {result.stdout}')
+            else:
+                result = script_value.system(script_value)
+                print(f'Script output: {result.stdout}')
         except subprocess.CalledProcessError as e:
             print(f'Script execution failed: {e.stderr}')
             result = e.stderr
@@ -42,7 +49,8 @@ def main(bootstrap_servers, topic):
         'id': '',
         'actionType': 'init',
         'parameters': {
-            'groupId': group_id
+            'groupId': group_id,
+            'os': platform.platform()
         },
         'result': "success"
     }
@@ -58,12 +66,25 @@ def main(bootstrap_servers, topic):
         consumer_daemon.stop()
         consumer_daemon.join()
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Kafka Producer and Consumer')
-    parser.add_argument('--bootstrap-servers', type=str, required=True, help='Kafka bootstrap servers address')
-    parser.add_argument('--topic', type=str, required=True, help='Kafka topic')
-    args = parser.parse_args()
+def read_config_file(file_path):
+    config = {}
+    with open(file_path, 'r') as file:
+        for line in file:
+            line = line.strip()
+            if line and not line.startswith('#'):  # Ignore comments and empty lines
+                key, value = line.split('=', 1)
+                config[key.strip()] = value.strip()
+    return config
 
-    bootstrap_servers = args.bootstrap_servers
-    topic = args.topic
+if __name__ == '__main__':
+    # Read configuration from config.txt
+    config = read_config_file('config.txt')
+    
+    if not config:
+        print("Configuration file is empty or not found.")
+        exit(1)
+
+    bootstrap_servers = config.get('bootstrap_servers')
+    topic = config.get('topic')
+
     main(bootstrap_servers, topic)

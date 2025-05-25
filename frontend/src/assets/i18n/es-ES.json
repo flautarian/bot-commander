@@ -6,7 +6,9 @@
         "bot_list": "Lista de bots activos",
         "bot_name": "Id de bot",
         "bot_actions": "Informe de acciones",
-        "bot_actions_btn": "Ver Acciones"
+        "bot_actions_btn": "Ver Acciones",
+        "create_actions_btn": "Crear acción",
+        "submit_action_btn": "Aplicar acción"
     },
     "header": {
         "welcome": "Bienvenido a la aplicación de gestión de bots"
@@ -27,20 +29,33 @@
         "success": "Éxito",
         "warning": "Advertencia",
         "info": "Información",
+        "selected": "Seleccionado",
         "confirm": "Confirmar",
+        "close": "Cerrar",
+        "ok": "Aceptar",
         "cancel": "Cancelar",
         "remove": "Eliminar",
         "values": "Valores",
         "action_type": "Tipo de Acción",
+        "parameters": "Parámetros",
+        "result": "Resultado",
         "action": "Acción",
         "add_value": "Agregar Valor",
+        "select_action_type": "Seleccionar Tipo de Acción",
+        "select_action": "Seleccionar Acción",
+        "value": "Valor",
         "remove_value": "Eliminar Valor",
         "order_task": "Ordenar Tarea",
         "actionTypes":{
-            "exec_script": "Ejecutar Script",
-            "exec_script_result": "Resultado del Script",
-            "exec_script_error": "Error del Script",
-            "exec_script_desc": "Ejecutar un script en el bot"
+            "exec_script": "Ejecutar Script"
         }
+    },
+    "payload": {
+        "title": "Generador de Payload",
+        "name" : "Nombre",
+        "payload_type" : "Tipo de Payload",
+        "select_payload_type" : "Seleccionar Tipo de Payload",
+        "url_target" : "URL de destino",
+        "generate_payload": "Generar Payload"
     }
 }

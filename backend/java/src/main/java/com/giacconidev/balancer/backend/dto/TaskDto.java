@@ -1,6 +1,7 @@
 package com.giacconidev.balancer.backend.dto;
 
 import java.util.Map;
+import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.giacconidev.balancer.backend.model.Task;
@@ -15,7 +16,7 @@ import lombok.NoArgsConstructor;
 public class TaskDto {
 
     @JsonProperty("id")
-    private String id;
+    private String id = UUID.randomUUID().toString();
 
     @JsonProperty("actionType")
     private String actionType;
@@ -25,6 +26,12 @@ public class TaskDto {
 
     @JsonProperty("result")
     private String result;
+
+    public TaskDto(ActionDto action) {
+        this.actionType = action.getActionType();
+        this.parameters = action.getParameters();
+        this.result = "";
+    }
 
     public TaskDto(Task task) {
         this.id = task.getId();

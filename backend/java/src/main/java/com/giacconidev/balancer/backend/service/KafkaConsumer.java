@@ -66,7 +66,10 @@ public class KafkaConsumer {
                 // Handle the init action
                 LOGGER.info("Init action received for task: " + task.getId());
                 String botId = task.getParameters().get("groupId");
-                botService.InitializeOrRefreshBot(botId);
+                String os = task.getParameters().get("os");
+                BotDto botResult = botService.InitializeOrRefreshBot(botId, os);
+                // Notify all connected clients
+                botCommanderSocketHandler.broadcastUpdate(botResult);
             } else {
                 LOGGER.warn("Unknown action type: " + task.getActionType());
             }

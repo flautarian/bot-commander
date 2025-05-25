@@ -80,6 +80,7 @@ services:
       SPRING_DATA_MONGODB_URI: mongodb://botUser:botPassword@commander-db:27017/botCommander
       KAFKA_CONSUMER_GROUP_ID: apps
       KAFKA_AUTO_OFFSET_RESET: earliest
+      SPRING_PROFILES_ACTIVE: pro
     networks:
       - my-network
     depends_on:
