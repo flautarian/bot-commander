@@ -1,10 +1,10 @@
-package com.giacconidev.balancer.backend.dto;
+package com.giacconidev.botcommander.backend.dto;
 
 import java.util.Map;
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.giacconidev.balancer.backend.model.Task;
+import com.giacconidev.botcommander.backend.model.Task;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

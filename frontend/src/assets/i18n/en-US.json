@@ -4,6 +4,8 @@
         "description": "Application for managing tasks in bots",
         "bot_list": "Active bot list",
         "bot_name": "Bot name",
+        "bot_os": "Bot OS",
+        "bot_last_signal": "Last seen",
         "bot_actions": "Actions report",
         "bot_actions_btn": "Check actions",
         "create_actions_btn": "Create action",

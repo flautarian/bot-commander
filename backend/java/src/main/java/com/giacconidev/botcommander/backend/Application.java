@@ -1,4 +1,4 @@
-package com.giacconidev.balancer.backend;
+package com.giacconidev.botcommander.backend;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

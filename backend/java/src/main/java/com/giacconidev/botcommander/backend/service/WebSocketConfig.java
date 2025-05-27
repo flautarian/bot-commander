@@ -1,4 +1,4 @@
-package com.giacconidev.balancer.backend.service;
+package com.giacconidev.botcommander.backend.service;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;

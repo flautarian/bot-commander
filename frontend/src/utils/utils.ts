@@ -1,6 +1,7 @@
 import { ActionDto } from "models/ActionDto";
 import { ActionTypeDto } from "models/ActionTypeDto";
 import { BotDto } from "models/BotDto";
+import { HeartBeatEventDto } from "models/HeartBeatEventDto";
 import { TaskDto } from "models/TaskDto";
 import { UpdateTaskEventDto } from "models/UpdateTaskEventDto";
 
@@ -15,7 +16,7 @@ export class Utils {
     }
 
     static instanceOfBotDto(object: any): object is BotDto {
-        return 'id' in object && 'name' in object && 'status' in object && 'tasks' in object;
+        return 'id' in object && 'name' in object && 'lastSignal' in object && 'tasks' in object;
     }
 
     static instanceOfActionTypeDto(object: any): object is ActionTypeDto {
@@ -32,5 +33,9 @@ export class Utils {
 
     static instanceOfUpdateTaskEventDto(object: any): object is UpdateTaskEventDto {
         return 'botId' in object && 'taskId' in object && 'result' in object;
+    }
+
+    static instanceOfHeartBeatEventDto(object: any): object is HeartBeatEventDto {
+        return 'botId' in object && !('taskId' in object);
     }
 }

@@ -1,13 +1,14 @@
-package com.giacconidev.balancer.backend.dto;
+package com.giacconidev.botcommander.backend.dto;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Optional;
 
 import org.bson.Document;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.giacconidev.balancer.backend.model.Bot;
-import com.giacconidev.balancer.backend.model.Task;
+import com.giacconidev.botcommander.backend.model.Bot;
+import com.giacconidev.botcommander.backend.model.Task;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -24,8 +25,8 @@ public class BotDto {
     @JsonProperty("name")
     private String name = "";
 
-    @JsonProperty("status")
-    private String status = "";
+    @JsonProperty("lastSignal")
+    private long lastSignal = -1L;
 
     @JsonProperty("os")
     private String os = "";
@@ -36,7 +37,7 @@ public class BotDto {
     public BotDto(Bot bot) {
         this.id = bot.getId();
         this.name = bot.getName();
-        this.status = bot.getStatus();
+        this.lastSignal = bot.getLastSignal().toEpochMilli();
         this.os = bot.getOs();
         ArrayList<TaskDto> tasks = new ArrayList<>();
         for (Task task : Optional.ofNullable(bot.getTasks()).orElse(new ArrayList<>())) {
@@ -49,7 +50,7 @@ public class BotDto {
     public BotDto(Document body) {
         this.id = String.valueOf(body.getOrDefault("id",""));
         this.name = String.valueOf(body.getOrDefault("name",""));
-        this.status = String.valueOf(body.getOrDefault("status",""));
+        this.lastSignal = (Long) body.getOrDefault("lastSignal", Instant.now().toEpochMilli());
         this.tasks = new ArrayList<>();
         ArrayList<Document> tasks = (ArrayList<Document>) body.getOrDefault("tasks", new ArrayList<>());
         for (Document task : Optional.ofNullable(tasks).orElse(new ArrayList<>())) {

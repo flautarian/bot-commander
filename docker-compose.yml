@@ -67,8 +67,8 @@ services:
     networks:
       - my-network
   
-  # backend microservice
-  commander-microservice:
+  # backend backend
+  commander-backend:
     container_name: commander-backend
     build:
       context: ./backend/java
@@ -102,7 +102,7 @@ services:
     ports:
       - "4200:80"
     depends_on:
-      commander-microservice:
+      commander-backend:
         condition: service_started
     networks:
       - my-network

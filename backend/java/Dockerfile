@@ -23,7 +23,7 @@ FROM eclipse-temurin:21-jdk
 WORKDIR /app
 
 # Copy built Spring Boot JAR from previous stage
-COPY --from=spring-builder /app/target/balancerbackend.jar /app/javaMicroService.jar
+COPY --from=spring-builder /app/target/botcommanderbackend.jar /app/javaMicroService.jar
 
 # Expose the port the app runs on
 EXPOSE 8080

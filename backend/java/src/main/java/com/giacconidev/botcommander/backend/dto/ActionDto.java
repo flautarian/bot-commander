@@ -1,4 +1,4 @@
-package com.giacconidev.balancer.backend.dto;
+package com.giacconidev.botcommander.backend.dto;
 
 import java.util.ArrayList;
 import java.util.Map;

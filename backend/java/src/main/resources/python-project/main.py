@@ -1,10 +1,10 @@
 import platform
+import time
 from kafka_producer import produce_message
 from kafka_consumer import KafkaConsumerDaemon
-import argparse
 import subprocess
 import uuid
-import os 
+import schedule
 
 def handle_callback(task, group_id):
     """ Handle the callback logic based on the consumed message. """
@@ -36,6 +36,18 @@ def handle_callback(task, group_id):
         }
         produce_message(bootstrap_servers, 'callback', callback_task)
 
+""" Produce a heartbeat message to the specified topic. """
+def produce_heart_beat(bootstrap_servers, topic, bot_id):
+    print(f"Heartbeat message produced to topic {topic}")
+    heart_beat_task = {
+        'actionType': 'heartbeat',
+        'parameters': {
+            'botId': bot_id
+        },
+        'result': "success"
+    }
+    produce_message(bootstrap_servers, "heartbeat", heart_beat_task)
+
 def main(bootstrap_servers, topic):
     # Create and start the consumer daemon
     group_id = str(uuid.uuid4())
@@ -56,10 +68,16 @@ def main(bootstrap_servers, topic):
     }
     produce_message(bootstrap_servers, "init", initial_task)
     print(f"Initial message produced to topic {topic} with group ID {group_id}")
+    
+    # Every 60 seconds we will send a heart beat message
+    schedule.every(60).seconds.do(produce_heart_beat, bootstrap_servers, topic, group_id)
+    print(f"Initialized scheduled heartbeat system for group ID {group_id}")
 
     try:
         # Keep the main thread alive
         while True:
+            schedule.run_pending()
+            time.sleep(1)  # Sleep for a short interval to prevent high CPU usage
             pass
     except KeyboardInterrupt:
         print("Stopping consumer...")

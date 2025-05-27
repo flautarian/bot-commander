@@ -1,4 +1,4 @@
-package com.giacconidev.balancer.backend.config;
+package com.giacconidev.botcommander.backend.config;
 
 
 import org.springframework.context.annotation.Bean;
@@ -11,7 +11,6 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Component
 @Configuration
-@Profile("dev") // This config only has to be working in development mode
 public class CorsConfig {
 
     @Bean
@@ -26,7 +25,7 @@ public class CorsConfig {
                         .addMapping("/**")
                         .allowedMethods(CorsConfiguration.ALL)
                         .allowedHeaders(CorsConfiguration.ALL)
-                        .allowedOriginPatterns(CorsConfiguration.ALL);
+                        .allowedOrigins("http://localhost:4200");
             }
         };
     }

@@ -11,6 +11,7 @@ import { ToastrService } from 'ngx-toastr';
 import { BotDto } from 'models/BotDto';
 import { UpdateTaskEventDto } from 'models/UpdateTaskEventDto';
 import { ActionTypeDto } from 'models/ActionTypeDto';
+import { HeartBeatEventDto } from 'models/HeartBeatEventDto';
 
 @Component({
     selector: 'app-frontpage',
@@ -31,6 +32,8 @@ export class FrontpageComponent implements OnInit {
     isModalOpen = false;
     isActionModalOpen = false;
     isPayloadGenModalOpen = false;
+    allBotsSelected = false;
+    @Output() actionSubmitted: EventEmitter<ActionDto> = new EventEmitter<ActionDto>();
 
     private currencyPipe: CurrencyPipe = new CurrencyPipe('en-US');
 
@@ -75,24 +78,34 @@ export class FrontpageComponent implements OnInit {
                 this.bots = update;
             }
             else if (Utils.instanceOfBotDto(update)) {
+                let botDto = update as BotDto;
                 // pass entire bot arriving to system
-                let index = this.bots.findIndex((bot: BotDto) => bot.id === update.id);
+                let index = this.bots.findIndex((bot: BotDto) => bot.id === botDto.id);
                 if (index === -1) {
-                    this.bots.push(update);
+                    this.bots.push(botDto);
                 }
                 else {
-                    this.bots[index] = update;
+                    this.bots[index] = botDto;
                 }
             }
             else if (Utils.instanceOfUpdateTaskEventDto(update)) {
                 // pass taskDto update arriving to system
-                // this is a single update
+                // this is a single task info update
                 let uteDto = update as UpdateTaskEventDto;
                 // find bot index
                 let index = this.bots.findIndex(bot => bot.id == uteDto.botId);
                 //add result to task index
                 let taskIndex = this.bots[index].tasks.findIndex(task => task.id === uteDto.taskId);
                 this.bots[index].tasks[taskIndex].result = uteDto.result;
+            }
+            else if (Utils.instanceOfHeartBeatEventDto(update)) {
+                // pass heart beat event arriving to system
+                // this is a heart beat
+                let heartDto = update as HeartBeatEventDto;
+                let index = this.bots.findIndex(bot => bot.id == heartDto.botId);
+                if (index >= -1) {
+                    this.bots[index].lastSignal = heartDto.lastSignal;
+                }
             }
         });
     }
@@ -165,6 +178,7 @@ export class FrontpageComponent implements OnInit {
         else {
             this.formData.selectedBots = this.bots.map((bot: BotDto) => bot.id);
         }
+        this.allBotsSelected = this.formData?.selectedBots.length === this.bots.length;
     }
 
     selectBot = (botId: string) => {
@@ -174,6 +188,7 @@ export class FrontpageComponent implements OnInit {
         else {
             this.formData?.selectedBots.push(botId);
         }
+        this.allBotsSelected = this.formData?.selectedBots.length === this.bots.length;
     }
 
     openModal = () => {

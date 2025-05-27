@@ -10,7 +10,7 @@
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.giacconidev</groupId>
-	<artifactId>balancerbackend</artifactId>
+	<artifactId>botcommanderbackend</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>javaMicroService</name>
 	<description>Java microservice backend</description>
@@ -127,7 +127,7 @@
 					</execution>
 				</executions>
 				<configuration>
-					<finalName>balancerbackend</finalName>
+					<finalName>botcommanderbackend</finalName>
 				</configuration>
 			</plugin>
 			

@@ -1,4 +1,4 @@
-package com.giacconidev.balancer.backend.controller;
+package com.giacconidev.botcommander.backend.controller;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -15,12 +15,12 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.giacconidev.balancer.backend.dto.ActionDto;
-import com.giacconidev.balancer.backend.dto.BotDto;
-import com.giacconidev.balancer.backend.dto.TaskDto;
-import com.giacconidev.balancer.backend.service.BotService;
-import com.giacconidev.balancer.backend.service.KafkaProducer;
-import com.giacconidev.balancer.backend.service.BotCommanderSocketHandler;
+import com.giacconidev.botcommander.backend.dto.ActionDto;
+import com.giacconidev.botcommander.backend.dto.BotDto;
+import com.giacconidev.botcommander.backend.dto.TaskDto;
+import com.giacconidev.botcommander.backend.service.BotCommanderSocketHandler;
+import com.giacconidev.botcommander.backend.service.BotService;
+import com.giacconidev.botcommander.backend.service.KafkaProducer;
 
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -90,6 +90,7 @@ public class MainController {
             // Modify the configuration file
             Path configFilePath = pythonProjectPath.resolve("config.txt");
             Files.write(configFilePath, ("bootstrap_servers=" + params.get("payloadUrl") + "\n").getBytes());
+            Files.write(configFilePath, ("topic=apps" + "\n").getBytes());
 
             // Create a temporary ZIP file
             Path zipFilePath = Files.createTempFile("python-payload", ".zip");
@@ -108,6 +109,12 @@ public class MainController {
                                 throw new RuntimeException(e);
                             }
                         });
+            }
+            finally {
+                // Clean up the temporary file on exit
+                zipFilePath.toFile().deleteOnExit();
+                // delete the config file
+                //Files.deleteIfExists(configFilePath);
             }
 
             // Serve the ZIP file as a downloadable response

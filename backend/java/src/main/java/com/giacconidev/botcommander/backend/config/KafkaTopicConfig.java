@@ -1,5 +1,5 @@
 
-package com.giacconidev.balancer.backend.config;
+package com.giacconidev.botcommander.backend.config;
 
 import org.apache.kafka.clients.admin.NewTopic;
 import org.springframework.beans.factory.annotation.Value;

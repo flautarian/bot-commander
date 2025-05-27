@@ -1,4 +1,4 @@
-package com.giacconidev.balancer.backend.utils;
+package com.giacconidev.botcommander.backend.utils;
 
 public class Utils {
     public static final String BOT_ACTIVE = "active";

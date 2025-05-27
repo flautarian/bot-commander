@@ -1,5 +1,5 @@
 
-package com.giacconidev.balancer.backend.service;
+package com.giacconidev.botcommander.backend.service;
 
 import org.apache.kafka.clients.admin.NewTopic;
 import org.springframework.context.annotation.Profile;
@@ -8,10 +8,11 @@ import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Service;
+
+import com.giacconidev.botcommander.backend.dto.TaskDto;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.giacconidev.balancer.backend.dto.TaskDto;
 
 @Service
 @Profile("!test")

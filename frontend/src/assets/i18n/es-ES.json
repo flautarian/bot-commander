@@ -5,6 +5,8 @@
         "description": "Aplicación para gestionar tareas en bots",
         "bot_list": "Lista de bots activos",
         "bot_name": "Id de bot",
+        "bot_os": "Sistema operativo del bot",
+        "bot_last_signal": "Última señal",
         "bot_actions": "Informe de acciones",
         "bot_actions_btn": "Ver Acciones",
         "create_actions_btn": "Crear acción",

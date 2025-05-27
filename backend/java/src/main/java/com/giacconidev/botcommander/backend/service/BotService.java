@@ -1,22 +1,24 @@
-package com.giacconidev.balancer.backend.service;
+package com.giacconidev.botcommander.backend.service;
 
+import java.time.Instant;
 import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
-import com.giacconidev.balancer.backend.dto.BotDto;
-import com.giacconidev.balancer.backend.dto.TaskDto;
-import com.giacconidev.balancer.backend.model.Bot;
-import com.giacconidev.balancer.backend.model.Task;
-import com.giacconidev.balancer.backend.repository.BotRepository;
-import com.giacconidev.balancer.backend.utils.Utils;
+
+import com.giacconidev.botcommander.backend.dto.BotDto;
+import com.giacconidev.botcommander.backend.dto.TaskDto;
+import com.giacconidev.botcommander.backend.model.Bot;
+import com.giacconidev.botcommander.backend.model.Task;
+import com.giacconidev.botcommander.backend.repository.BotRepository;
+import com.giacconidev.botcommander.backend.utils.Utils;
 
 import reactor.core.publisher.Flux;
 
 @Service
-@Profile("!test") 
+@Profile("!test")
 public class BotService {
 
     private BotRepository botRepository;
@@ -28,11 +30,11 @@ public class BotService {
     public BotService(BotRepository botRepository) {
         this.botRepository = botRepository;
     }
-    
+
     private static final Logger logger = LoggerFactory.getLogger(BotService.class);
 
-    public Flux<BotDto> getAllActiveBots() {
-        return botRepository.findByStatus(Utils.BOT_ACTIVE).map(BotDto::new)
+    public Flux<BotDto> getAllBots() {
+        return botRepository.findAll().map(BotDto::new)
                 .doOnError(error -> logger.error("Failed to get bots from db: " + error.getMessage()));
     }
 
@@ -46,28 +48,27 @@ public class BotService {
             // save bot
             return new BotDto(botRepository.save(bot).block());
         }
-        return null; // or throw an exception if bot not found
+        return null;
     }
 
     public BotDto InitializeOrRefreshBot(String botId, String os) {
         Bot bot = botRepository.findById(botId).block();
         if (Objects.nonNull(bot)) {
-            // refresh bot
-            bot.setStatus(Utils.BOT_ACTIVE);
+            // refresh last signal
+            bot.setLastSignal(Instant.now());
             // refresh os platform
-            bot.setOs(os);
+            if (Objects.nonNull(os))
+                bot.setOs(os);
             // save bot
             botRepository.save(bot).block();
-        }
-        else {
+        } else {
             // create new bot
             bot = new Bot();
             bot.setId(botId);
             bot.setName("New Bot");
             bot.setOs(os);
-            bot.setStatus(Utils.BOT_ACTIVE);
             // save bot
-            botRepository.save(bot).block(); 
+            botRepository.save(bot).block();
         }
         return new BotDto(bot);
     }
@@ -81,8 +82,8 @@ public class BotService {
                 // update task result
                 task.setResult(result);
             }
-            // refresh bot
-            bot.setStatus(Utils.BOT_ACTIVE);
+            // refresh last signal
+            bot.setLastSignal(Instant.now());
             // save bot
             botRepository.save(bot).block();
         }

@@ -4,6 +4,6 @@ export interface BotDto {
     id: string,
     name: string,
     os: string,
-    status: string,
+    lastSignal: number,
     tasks: TaskDto[],
 }

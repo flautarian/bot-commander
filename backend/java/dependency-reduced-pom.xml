@@ -8,7 +8,7 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.giacconidev</groupId>
-  <artifactId>balancerbackend</artifactId>
+  <artifactId>botcommanderbackend</artifactId>
   <name>javaMicroService</name>
   <version>0.0.1-SNAPSHOT</version>
   <description>Java microservice backend</description>
@@ -60,7 +60,7 @@
               <finalName>javaMicroService-jar-with-dependencies</finalName>
               <transformers>
                 <transformer>
-                  <mainClass>com.giacconidev.balancer.backend.Application</mainClass>
+                  <mainClass>com.giacconidev.botcommander.backend.Application</mainClass>
                 </transformer>
               </transformers>
             </configuration>

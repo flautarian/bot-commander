@@ -1,7 +1,7 @@
-package com.giacconidev.balancer.backend.service;
+package com.giacconidev.botcommander.backend.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.giacconidev.balancer.backend.dto.BotDto;
+import com.giacconidev.botcommander.backend.dto.BotDto;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,10 +16,11 @@ import org.springframework.web.socket.WebSocketSession;
 
 import reactor.core.publisher.Flux;
 
+import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 @Component
-@Profile("!test") 
+@Profile("!test")
 public class BotCommanderSocketHandler implements WebSocketHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(BotCommanderSocketHandler.class);
@@ -37,21 +38,14 @@ public class BotCommanderSocketHandler implements WebSocketHandler {
     @Override
     public void afterConnectionEstablished(@NonNull WebSocketSession session) throws Exception {
         logger.info("New WebSocket connection established: {}", session.getId());
-        Flux<BotDto> activeBots = botService.getAllActiveBots();
+        Flux<BotDto> activeBots = botService.getAllBots();
+        // convert to list of BotDto and broadcast to all connected clients
+        List<BotDto> activeBotsList = activeBots.collectList().block();
 
-        activeBots.doOnNext(data -> {
-            try {
-                // initial message with list of orders
-                String json = objectMapper.writeValueAsString(data);
-                session.sendMessage(new TextMessage(json));
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }).subscribe();
-
-        activeBots.doOnComplete(() -> {
-            sessions.add(session);
-        }).subscribe();
+        String json = objectMapper.writeValueAsString(activeBotsList);
+        session.sendMessage(new TextMessage(json));
+        // Add the session to the list of active sessions
+        sessions.add(session);
     }
 
     @Override

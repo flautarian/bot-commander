@@ -1,4 +1,4 @@
-package com.giacconidev.balancer.backend.model;
+package com.giacconidev.botcommander.backend.model;
 
 import java.util.HashMap;
 import java.util.Map;

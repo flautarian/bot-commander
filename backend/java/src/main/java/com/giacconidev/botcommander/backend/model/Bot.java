@@ -1,5 +1,6 @@
-package com.giacconidev.balancer.backend.model;
+package com.giacconidev.botcommander.backend.model;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -20,7 +21,7 @@ public class Bot {
     @Id
     private String id;
     private String name;
-    private String status;
+    private Instant lastSignal = Instant.now();
     private String os;
     private ArrayList<Task> tasks = new ArrayList<>();
 }
