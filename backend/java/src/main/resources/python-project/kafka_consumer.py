@@ -41,7 +41,7 @@ class KafkaConsumerDaemon(threading.Thread):
                 #only attend message which header's recipientId is equal to groupId or recipientId is empty (broadcast)
                 if msg.headers() is not None:
                     headers = dict(msg.headers())
-                    if 'recipientId' in headers and headers['recipientId'] != '' and headers['recipientId'].decode("utf-8") != self.groupId:
+                    if 'recipientId' in headers and headers['recipientId'].decode("utf-8") != 'all' and headers['recipientId'].decode("utf-8") != self.groupId:
                         print(f"Message ignored, recipientId {headers['recipientId']} does not match groupId {self.groupId}")
                         continue
 

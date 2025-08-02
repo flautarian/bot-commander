@@ -1,0 +1,17 @@
+{
+  "name": "bot-js",
+  "version": "1.0.0",
+  "description": "a bot client made in js",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "kafkajs": "^2.2.4",
+    "node-schedule": "^2.1.1",
+    "uuid": "^11.1.0"
+  }
+}

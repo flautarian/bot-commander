@@ -40,7 +40,7 @@ h2 {
     animation: gradientShift 2s alternate-reverse infinite;
 }
 
-.bot-inner-header{
+.bot-inner-header {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -59,7 +59,8 @@ h2 {
     border-radius: 20px;
 }
 
-thead, tbody tr {
+thead,
+tbody tr {
     display: table;
     width: 100%;
     table-layout: fixed;
@@ -120,11 +121,31 @@ thead, tbody tr {
     /* gradient animation when disabled or enabled */
     transition: background-color 0.3s ease, color 0.3s ease, transform 0.3s ease;
 }
+
 /* Enabled button styles */
 .create-action-btn:enabled {
     background-color: #4CAF50;
     color: white;
 }
+
+.close-action-btn {
+    width: 30%;
+    height: 15%;
+    border-radius: 20px;
+    background-color: #ff5353;
+    align-self: center;
+    color: white;
+}
+
+.submit-action-btn {
+    width: 30%;
+    height: 15%;
+    border-radius: 20px;
+    background-color: #4CAF50;
+    align-self: center;
+    color: white;
+}
+
 
 /* Disabled button styles */
 .create-action-btn:disabled {
@@ -143,6 +164,7 @@ thead, tbody tr {
     /* gradient animation when disabled or enabled */
     transition: background-color 0.3s ease, color 0.3s ease, transform 0.3s ease;
 }
+
 /* Enabled button styles */
 .create-payload-btn:enabled {
     background-color: #4CAF50;
@@ -160,11 +182,12 @@ thead, tbody tr {
 
 /* MODAL */
 
-.create-action-form-container{
+.payload-form {
     display: flex;
     justify-content: center;
     align-items: center;
     flex-direction: column;
+    row-gap: 20px;
     width: 100%;
     height: 100%;
 }
@@ -186,6 +209,8 @@ thead, tbody tr {
     transform: translate(-50%, -50%);
     width: 80vw;
     max-width: 600px;
+    max-height: 40dvh;
+    place-self: anchor-center;
     background-color: white;
     border-radius: 10px;
     padding: 20px;
@@ -194,9 +219,17 @@ thead, tbody tr {
     animation: fadeIn 0.25s ease-in-out;
 }
 
-.create-action-form{
+.create-action-form {
     display: flex;
     flex-direction: column;
+    width: 100%;
+    gap: 10px;
+}
+
+.generate-payload-form {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
     gap: 10px;
 }
 
@@ -205,13 +238,39 @@ thead, tbody tr {
     flex-direction: column;
 }
 
+.flex-row {
+    display: flex;
+    flex-direction: row;
+}
+
+.parameter-entry {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: flex-start;
+    width: 100%;
+}
+
+.text-area-input {
+    width: 100%;
+    height: 100%;
+    resize: none;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    font-family: 'monospace';
+}
+
+.flex-space-between {
+    justify-content: space-between;
+}
+
 .task-list-container {
     display: flex;
     justify-content: center;
     align-items: center;
     flex-direction: column;
     width: 100%;
-    height: 100%;
+    max-height: 25dvh;
 }
 
 .task-list-header {

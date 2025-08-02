@@ -14,6 +14,9 @@
 /frontend/.vscode/
 .angular/cache
 
+# Ignore Javascript payload node modules
+/backend/java/src/main/resources/javascript-project/node_modules/
+
 
 # Ignore IntelliJ IDEA files
 .idea/

@@ -68,7 +68,7 @@ public class KafkaConsumer {
                 String botId = task.getParameters().get("botId");
                 LOGGER.info("Bot: " + botId + " given life signals");
                 // Update bot
-                BotDto result = botService.InitializeOrRefreshBot(botId, null);
+                BotDto result = botService.InitializeOrRefreshBot(botId, null, null);
                 // Notify all connected clients
                 botCommanderSocketHandler.broadcastUpdate(new HeartBeatEventDto(result.getId(), result.getLastSignal()));
             } else {
@@ -93,7 +93,8 @@ public class KafkaConsumer {
                 LOGGER.info("Init action received for task: " + task.getId());
                 String botId = task.getParameters().get("groupId");
                 String os = task.getParameters().get("os");
-                BotDto botResult = botService.InitializeOrRefreshBot(botId, os);
+                String name = task.getParameters().get("name");
+                BotDto botResult = botService.InitializeOrRefreshBot(botId, os, name);
                 // Notify all connected clients
                 botCommanderSocketHandler.broadcastUpdate(botResult);
             } else {

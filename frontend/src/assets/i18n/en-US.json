@@ -9,7 +9,8 @@
         "bot_actions": "Actions report",
         "bot_actions_btn": "Check actions",
         "create_actions_btn": "Create action",
-        "submit_action_btn": "Apply action"
+        "submit_action_btn": "Apply action",
+        "submit_generate_payload_btn": "Generate Payload"
     },
     "header": {
         "welcome": "Welcome to the bot management application"

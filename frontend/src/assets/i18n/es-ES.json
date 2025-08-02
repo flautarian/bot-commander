@@ -10,7 +10,8 @@
         "bot_actions": "Informe de acciones",
         "bot_actions_btn": "Ver Acciones",
         "create_actions_btn": "Crear acción",
-        "submit_action_btn": "Aplicar acción"
+        "submit_action_btn": "Aplicar acción",
+        "submit_generate_payload_btn": "Generar Payload"
     },
     "header": {
         "welcome": "Bienvenido a la aplicación de gestión de bots"

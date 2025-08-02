@@ -116,7 +116,8 @@ export class FrontpageComponent implements OnInit {
             parametersObj[key] = val;
         });
         this.form.setValue({
-            selectedBots: this.formData.selectedBots,
+            // If all bots are selected, we send empty to communicate broadcast to all bots
+            selectedBots: this.formData.selectedBots.length === this.bots.length ? [] : this.formData.selectedBots,
             actionType: this.formData.actionType,
             parameters: parametersObj
         });
@@ -229,7 +230,12 @@ export class FrontpageComponent implements OnInit {
             payloadType: '',
             payloadUrl: '',
         };
+        const selectedBotsParam = this.formData.selectedBots;
         this.payloadForm.reset();
+        this.payloadFormData.selectedBots = selectedBotsParam;
+        this.getDefaultPayloadUrlTarget();
+        this.closePayloadGenModal();
+        this.cdr.detectChanges();
     }
 
     cleanAndCloseActionModal() {
@@ -241,6 +247,8 @@ export class FrontpageComponent implements OnInit {
         };
         this.form.reset();
         this.paramEntries = this.getFormDataParameterEntries();
+        this.allBotsSelected = false;
+        this.closeModal();
         this.cdr.detectChanges();
     }
 

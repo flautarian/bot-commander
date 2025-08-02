@@ -2,10 +2,17 @@
     "configurations": [
         {
             "type": "java",
+            "name": "Application",
+            "request": "launch",
+            "mainClass": "com.giacconidev.botcommander.backend.Application",
+            "projectName": "balancerbackend"
+        },
+        {
+            "type": "java",
             "name": "balancer backend",
             "request": "launch",
             "mainClass": "com.giacconidev.balancer.backend.Application",
             "projectName": "balancer.backend"
-        },
+        }
     ]
 }

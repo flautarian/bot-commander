@@ -76,7 +76,7 @@ public class BotCommanderSocketHandler implements WebSocketHandler {
         sessions.forEach(session -> {
             try {
                 if (session.isOpen()) {
-                    logger.info("Sending message to session: {}", session.getId());
+                    logger.info("Sending WebSocket message to session: {}", session.getId());
                     String json = objectMapper.writeValueAsString(object);
                     session.sendMessage(new TextMessage(json));
                 }

@@ -29,14 +29,14 @@ public class KafkaProducer {
         this.kafkaTemplate = kafkaTemplate;
     }
 
-    public void sendMessage(String botId, TaskDto event) {
-        LOGGER.info(String.format("Send order => %s", event.toString()));
+    public void sendMessage(String target, TaskDto event) {
+        LOGGER.info(String.format("Produce Kafka order => %s", event.toString()));
 
         // create order message
         Message<TaskDto> message = MessageBuilder
                 .withPayload(event)
                 .setHeader(KafkaHeaders.TOPIC, topic.name())
-                .setHeader("recipientId", botId)
+                .setHeader("recipientId", target)
                 .build();
         kafkaTemplate.send(message);
     }

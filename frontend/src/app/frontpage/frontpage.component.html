@@ -15,7 +15,8 @@
         <table class="bot-list">
           <thead>
             <tr class="bot-list-header">
-              <th style="width: 10%;"><input type="checkbox" (click)="selectAllBots()" [(ngModel)]="allBotsSelected"></th>
+              <th style="width: 10%;"><input type="checkbox" (click)="selectAllBots()" [(ngModel)]="allBotsSelected">
+              </th>
               <th>{{"app.bot_name" | translate}}</th>
               <th style="width: 20%;">{{"app.bot_os" | translate}}</th>
               <th style="width: 20%;">{{"app.bot_last_signal" | translate}}</th>
@@ -28,7 +29,7 @@
                   [checked]="formData.selectedBots.includes(bot.id)">
               </td>
               <td>{{bot.id}}</td>
-              <td style="width: 20%;">{{bot.os || 'unknown'}}</td>
+              <td style="width: 20%;">{{bot.name || 'unknown'}}</td>
               <td style="width: 20%;">{{ bot.lastSignal | date :'short' }}</td>
               <td>
                 <button (click)="openActionsModal(bot.id)">{{ "app.bot_actions_btn" | translate }}</button>
@@ -60,16 +61,22 @@
         <div class="flex-column">
           <div *ngIf="paramEntries.length > 0">
             <label>Parameters:</label>
-            <div *ngFor="let entry of paramEntries; let i = index">
-              <label>{{ entry[0] }}:</label>
-              <input type="text" [value]="entry[1]" (input)="updateMapValue($event, entry[0])" />
+            <div *ngFor="let entry of paramEntries; let i = index" class="parameter-entry">
+              <label for="parameter_{{entry[0]}}" style="display: block;">{{ entry[0] }}:</label>
+              <textarea id="parameter_{{entry[0]}}" type="text" class="text-area-input" [value]="entry[1]"
+                (input)="updateMapValue($event, entry[0])">
+              </textarea>
             </div>
           </div>
         </div>
-        <button type="submit" (click)="submitForm()">{{ "app.submit_action_btn" | translate }}</button>
+
+        <div class="flex-row flex-space-between">
+          <button (click)="closeModal()" class="close-action-btn">{{ "utils.close" | translate }}</button>
+          <button type="submit" (click)="submitForm()" class="submit-action-btn">{{ "app.submit_action_btn" | translate
+            }}</button>
+        </div>
       </form>
     </div>
-    <button (click)="closeModal()">{{ "utils.close" | translate }}</button>
   </div>
 </div>
 <!-- BOT TASKS VIEWER MODAL -->
@@ -96,7 +103,10 @@
         </tbody>
       </table>
     </div>
-    <button (click)="closeActionsModal()">{{ "utils.close" | translate }}</button>
+    <div class="flex-row flex-space-between">
+      <button (click)="closeActionsModal()" class="close-action-btn" style="width:100%">{{ "utils.close" | translate
+        }}</button>
+    </div>
   </div>
 </div>
 
@@ -104,8 +114,8 @@
 <div class="modal-overlay" (click)="closePayloadGenModal()" *ngIf="isPayloadGenModalOpen">
   <div class="modal-content" (click)="$event.stopPropagation()">
     <h2>{{ "payload.title" | translate }}</h2>
-    <div class="form-group">
-      <form [formGroup]="payloadForm" class="payload-form">
+    <div class="create-action-form-container">
+      <form [formGroup]="payloadForm" class="generate-payload-form">
         <div class="flex-column">
           <label for="payloadType">{{ "payload.payload_type" | translate }}</label>
           <select id="payloadType" formControlName="payloadType" [(ngModel)]="payloadFormData.payloadType">
@@ -116,12 +126,17 @@
 
         <div class="flex-column">
           <label for="payloadUrl">{{ "payload.url_target" | translate }}</label>
-          <input id="payloadUrl" formControlName="payloadUrl" [(ngModel)]="payloadFormData.payloadUrl"/>
+          <input id="payloadUrl" formControlName="payloadUrl" [(ngModel)]="payloadFormData.payloadUrl" />
         </div>
-
-        <button type="submit" (click)="submitPayloadForm()">{{ "app.submit_payload_btn" | translate }}</button>
+        
+        <div class="flex-row flex-space-between">
+          <button (click)="closePayloadGenModal()" class="close-action-btn">{{ "utils.close" | translate }}</button>
+          <button type="submit" (click)="submitPayloadForm()" class="submit-action-btn">{{
+            "app.submit_generate_payload_btn" | translate
+            }}</button>
+        </div>
       </form>
+
     </div>
-    <button (click)="closePayloadGenModal()">{{ "utils.close" | translate }}</button>
   </div>
 </div>
