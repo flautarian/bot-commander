@@ -12,6 +12,12 @@ export class Utils {
             description: 'utils.actionTypes.exec_script_desc',
             value: 'exec_script',
             parameters: new Map<string, any>([["value", ""]])
+        },
+        {
+            name: 'utils.actionTypes.make_screenshot',
+            description: 'utils.actionTypes.make_screenshot_desc',
+            value: 'screenshot',
+            parameters: new Map<string, any>([])
         }];
     }
 

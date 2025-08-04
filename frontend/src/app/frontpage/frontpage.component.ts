@@ -12,6 +12,7 @@ import { BotDto } from 'models/BotDto';
 import { UpdateTaskEventDto } from 'models/UpdateTaskEventDto';
 import { ActionTypeDto } from 'models/ActionTypeDto';
 import { HeartBeatEventDto } from 'models/HeartBeatEventDto';
+import { DomSanitizer } from '@angular/platform-browser';
 
 @Component({
     selector: 'app-frontpage',
@@ -23,6 +24,7 @@ export class FrontpageComponent implements OnInit {
     payloadForm!: FormGroup;
 
     bots: BotDto[] = [];
+    filterCurrentBots: Boolean = false;
     selectedBot: BotDto = {} as BotDto;
     paramEntries: Array<[string, any]> = [];
 
@@ -33,9 +35,8 @@ export class FrontpageComponent implements OnInit {
     isActionModalOpen = false;
     isPayloadGenModalOpen = false;
     allBotsSelected = false;
-    @Output() actionSubmitted: EventEmitter<ActionDto> = new EventEmitter<ActionDto>();
 
-    private currencyPipe: CurrencyPipe = new CurrencyPipe('en-US');
+    @Output() actionSubmitted: EventEmitter<ActionDto> = new EventEmitter<ActionDto>();
 
     formData: ActionDto = {
         selectedBots: [],
@@ -53,7 +54,8 @@ export class FrontpageComponent implements OnInit {
         private http: HttpClient,
         private botWebSocketService: BotWebSocketService,
         private toastr: ToastrService,
-        private cdr: ChangeDetectorRef) {
+        private cdr: ChangeDetectorRef,
+        private sanitizer: DomSanitizer) {
         this.paramEntries = this.getFormDataParameterEntries();
     }
 
@@ -211,6 +213,15 @@ export class FrontpageComponent implements OnInit {
         this.isPayloadGenModalOpen = true;
     }
 
+    toggleResultsTimeLimit = () => {
+        this.filterCurrentBots = !this.filterCurrentBots;
+    }
+
+    getCurrentBots = () => {
+        if (!this.filterCurrentBots)
+            return this.bots;
+        return this.bots.filter((bot: BotDto) => bot.lastSignal >= Date.now() - 5 * 60 * 1000);
+    }
 
     closeModal = () => {
         this.isModalOpen = false;
@@ -224,7 +235,7 @@ export class FrontpageComponent implements OnInit {
         this.isPayloadGenModalOpen = false;
     }
 
-    cleanAndClosePayloadGenModal() {
+    cleanAndClosePayloadGenModal = () => {
         this.isPayloadGenModalOpen = false;
         this.payloadFormData = {
             payloadType: '',
@@ -238,7 +249,7 @@ export class FrontpageComponent implements OnInit {
         this.cdr.detectChanges();
     }
 
-    cleanAndCloseActionModal() {
+    cleanAndCloseActionModal = () => {
         this.isActionModalOpen = false;
         this.formData = {
             selectedBots: [],
@@ -250,6 +261,84 @@ export class FrontpageComponent implements OnInit {
         this.allBotsSelected = false;
         this.closeModal();
         this.cdr.detectChanges();
+    }
+
+    /** * Checks the type of an object and returns a string indicating its type (object, string or array of strings).
+     * @param object The object to check.
+     * @returns A string indicating the type of the object.
+     */
+    checkObjectType = (object: any): string => {
+        if (typeof object === 'string') {
+            return 'string';
+        }
+        else if (Array.isArray(object)) {
+            return 'array';
+        }
+        return 'object';
+    }
+
+    convertResult = (item: any): any => {
+        try {
+            return JSON.parse(item);
+        } catch (e) {
+            return item;
+        }
+    }
+
+    /** * Decodes a base64 string to a safe resource URL for image display.
+     * @param base64String The base64 string of the image.
+     * @returns A sanitized resource URL for the image.
+     */
+    decodeBase64Img = (base64String: string) => {
+        return this.sanitizer.bypassSecurityTrustResourceUrl(
+            `data:image/png;base64, ${base64String}`
+        );
+    }
+
+    /**
+     * Downloads the image from a base64 string.
+     * @param base64String The base64 string of the image.
+     */
+    downloadImage = (base64String: string) => {
+        const blob = this.dataURItoBlob(base64String);
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'screenshot.png';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+    }
+
+    /**
+     * Converts a base64 string to a Blob object.
+     * @param base64String The base64 string to convert.
+     * @returns A Blob object representing the image.
+     */
+    dataURItoBlob = (base64String: string) => {
+        var dataURI = `data:image/png;base64, ${base64String}`;
+        // convert base64 to raw binary data held in a string
+        // doesn't handle URLEncoded DataURIs - see SO answer #6850276 for code that does this
+        var byteString = atob(dataURI.split(',')[1]);
+
+        // separate out the mime component
+        var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0]
+
+        // write the bytes of the string to an ArrayBuffer
+        var ab = new ArrayBuffer(byteString.length);
+
+        // create a view into the buffer
+        var ia = new Uint8Array(ab);
+
+        // set the bytes of the buffer to the correct values
+        for (var i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i);
+        }
+
+        // write the ArrayBuffer to a blob, and you're done
+        var blob = new Blob([ab], { type: mimeString });
+        return blob;
     }
 
     /* 

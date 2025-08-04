@@ -29,6 +29,7 @@ import com.giacconidev.botcommander.backend.model.Bot;
 import com.giacconidev.botcommander.backend.service.BotCommanderSocketHandler;
 import com.giacconidev.botcommander.backend.service.BotService;
 import com.giacconidev.botcommander.backend.service.KafkaProducer;
+import com.giacconidev.botcommander.backend.utils.Utils;
 
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -98,74 +99,7 @@ public class MainController {
 
     @PostMapping("/payload/download")
     public ResponseEntity<?> downloadPayload(@RequestBody Map<String, String> params) {
-        if (params.get("payloadType") == null || params.get("payloadType").isEmpty()) {
-            return ResponseEntity.badRequest().body("Payload type is required");
-        }
-        if (params.get("payloadUrl") == null || params.get("payloadUrl").isEmpty()) {
-            return ResponseEntity.badRequest().body("Payload URL is required");
-        }
-        // Download the payload
-        try {
-
-            String configContent = "bootstrap_servers=" + params.get("payloadUrl") + "\n" +
-                    "topic=apps\n";
-
-            // Create a ZIP file in the temporary directory
-            Path zipFilePath = Files.createTempFile("python-payload", ".zip");
-
-            // Zip the Python project
-            try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zipFilePath.toFile()))) {
-                ArrayList<String> bannedFiles = new ArrayList<>(Arrays.asList("config.txt", "myenv", "__pycache__"));
-                // Copy the Python project files to the ZIP
-                copyFolderToZip(params.get("payloadType") + "-project", bannedFiles, zos);
-
-                // Add a file called config file to the ZIP
-                ZipEntry configEntry = new ZipEntry("config.txt");
-                // add configContent content to the config file
-                zos.putNextEntry(configEntry);
-                zos.write(configContent.getBytes());
-                zos.closeEntry();
-            } finally {
-                // Clean up the temporary file on exit
-                zipFilePath.toFile().deleteOnExit();
-            }
-
-            // Serve the ZIP file as a downloadable response
-            Resource resource = new UrlResource(zipFilePath.toUri());
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"")
-                    .body(resource);
-        } catch (Exception e) {
-            throw new RuntimeException("Error: " + e.getMessage());
-        }
-    }
-
-    public void copyFolderToZip(String folderPath, ArrayList<String> bannedFiles, ZipOutputStream fos)
-            throws IOException {
-        // Create a resolver to find resources matching a pattern
-        PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
-
-        // Use the resolver to get resources from the specified folder
-        Resource[] resources = resolver.getResources("classpath:" + folderPath + "/*");
-
-        // Create a ZipOutputStream to write the ZIP file
-        for (Resource resource : resources) {
-            // Skip banned files
-            if (bannedFiles.contains(resource.getFilename())) {
-                continue;
-            }
-            // Create a new ZipEntry for each file
-            String fileName = resource.getFilename();
-            ZipEntry zipEntry = new ZipEntry(fileName);
-            fos.putNextEntry(zipEntry);
-
-            // Copy the content of the resource to the ZIP file
-            InputStream is = resource.getInputStream();
-            StreamUtils.copy(is, fos);
-            is.close();
-
-            fos.closeEntry();
-        }
+        return botService.getPayloadDownload(params);
     }
 
 }

@@ -155,6 +155,31 @@ tbody tr {
     transform: scale(0.95);
 }
 
+/* Toggle botlist button styles */
+.toggle-botlist-btn {
+    position: absolute;
+    left: 10px;
+    width: 25%;
+    border-radius: 20px;
+    /* gradient animation when disabled or enabled */
+    transition: background-color 0.3s ease, color 0.3s ease, transform 0.3s ease;
+}
+
+
+/* Enabled button styles */
+.toggle-botlist-btn:enabled {
+    background-color: #c2cc3a;
+    color: white;
+}
+
+/* Disabled button styles */
+.toggle-botlist-btn:disabled {
+    background-color: #ccc;
+    color: #666;
+    cursor: not-allowed;
+    transform: scale(0.95);
+}
+
 /* Payload button styles */
 .create-payload-btn {
     position: absolute;
@@ -204,12 +229,8 @@ tbody tr {
 
 .modal-content {
     position: fixed;
-    top: 20%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 80vw;
-    max-width: 600px;
-    max-height: 40dvh;
+    width: 80dvw;
+    max-height: 50dvh;
     place-self: anchor-center;
     background-color: white;
     border-radius: 10px;
@@ -217,6 +238,11 @@ tbody tr {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     z-index: 1000;
     animation: fadeIn 0.25s ease-in-out;
+}
+
+
+.small-modal-content {
+    width: 40dvw;
 }
 
 .create-action-form {
@@ -284,6 +310,14 @@ tbody tr {
     display: block;
     height: 90%;
     overflow: auto;
+}
+
+.task-result-image{
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 10px;
+    border: solid 1px #ccc;
 }
 
 

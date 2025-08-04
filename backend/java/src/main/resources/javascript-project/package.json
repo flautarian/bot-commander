@@ -12,6 +12,7 @@
   "dependencies": {
     "kafkajs": "^2.2.4",
     "node-schedule": "^2.1.1",
+    "screenshot-desktop": "^1.15.1",
     "uuid": "^11.1.0"
   }
 }

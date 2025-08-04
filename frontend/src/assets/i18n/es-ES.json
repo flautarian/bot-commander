@@ -10,6 +10,8 @@
         "bot_actions": "Informe de acciones",
         "bot_actions_btn": "Ver Acciones",
         "create_actions_btn": "Crear acción",
+        "toggle_only-current_bots_on_btn": "Mostrar bots actualizados",
+        "toggle_only-current_bots_off_btn": "Mostrar todos los bots",
         "submit_action_btn": "Aplicar acción",
         "submit_generate_payload_btn": "Generar Payload"
     },
@@ -50,7 +52,9 @@
         "remove_value": "Eliminar Valor",
         "order_task": "Ordenar Tarea",
         "actionTypes":{
-            "exec_script": "Ejecutar Script"
+            "exec_script": "Ejecutar Script",
+            "make_screenshot": "Hacer captura de pantalla",
+            "screenshot": "Captura de pantalla"
         }
     },
     "payload": {

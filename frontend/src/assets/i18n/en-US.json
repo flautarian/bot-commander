@@ -9,6 +9,8 @@
         "bot_actions": "Actions report",
         "bot_actions_btn": "Check actions",
         "create_actions_btn": "Create action",
+        "toggle_only-current_bots_on_btn": "Display updated bots",
+        "toggle_only-current_bots_off_btn": "Display all bots",
         "submit_action_btn": "Apply action",
         "submit_generate_payload_btn": "Generate Payload"
     },
@@ -49,7 +51,9 @@
         "value": "Value",
         "order_task": "Order Task",
         "actionTypes": {
-            "exec_script": "Run Script"
+            "exec_script": "Run Script",
+            "make_screenshot": "Take Screenshot",
+            "screenshot": "Screenshot"
         }
     },
     "payload": {
