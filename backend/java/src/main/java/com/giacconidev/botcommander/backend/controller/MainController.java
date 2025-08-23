@@ -1,25 +1,12 @@
 package com.giacconidev.botcommander.backend.controller;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 import org.springframework.context.annotation.Profile;
-import org.springframework.core.io.UrlResource;
-import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.*;
 
 import com.giacconidev.botcommander.backend.dto.ActionDto;
@@ -29,10 +16,6 @@ import com.giacconidev.botcommander.backend.model.Bot;
 import com.giacconidev.botcommander.backend.service.BotCommanderSocketHandler;
 import com.giacconidev.botcommander.backend.service.BotService;
 import com.giacconidev.botcommander.backend.service.KafkaProducer;
-import com.giacconidev.botcommander.backend.utils.Utils;
-
-import org.springframework.core.io.Resource;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 
 @RestController
@@ -82,6 +65,25 @@ public class MainController {
                 // update socker handler with the bot updated
                 botCommanderSocketHandler.broadcastUpdate(result);
             });
+        response.put("status", "OK");
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping(value = "/bot/{botId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Map<String, String>> deleteBot(@PathVariable String botId) {
+        Map<String, String> response = new HashMap<>();
+        if (botId == null || botId.isEmpty()) {
+            response.put("error", "Bot ID is required");
+            return ResponseEntity.badRequest().body(response);
+        }
+        botService.deleteBot(botId);
+
+        List<BotDto> bots = botService.getAllBots().collectList().block();
+        if (Objects.nonNull(bots) && !bots.isEmpty()) {
+            botService.updateBots(bots.stream().map(Bot::new).toList());
+            botCommanderSocketHandler.broadcastUpdate(bots);
+        }
+        
         response.put("status", "OK");
         return ResponseEntity.ok(response);
     }

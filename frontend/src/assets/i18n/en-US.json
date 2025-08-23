@@ -7,12 +7,17 @@
         "bot_os": "Bot OS",
         "bot_last_signal": "Last seen",
         "bot_actions": "Actions report",
+        "bot_actions_create_task_btn": "Create Task",
+        "create_payload_btn": "Create payload",
+        "bot_actions_delete_btn": "Delete",
         "bot_actions_btn": "Check actions",
         "create_actions_btn": "Create action",
-        "toggle_only-current_bots_on_btn": "Display updated bots",
+        "toggle_only-current_bots_on_btn": "Display recent alive bots",
         "toggle_only-current_bots_off_btn": "Display all bots",
         "submit_action_btn": "Apply action",
-        "submit_generate_payload_btn": "Generate Payload"
+        "submit_generate_payload_btn": "Generate Payload",
+        "total_bots": "Total Bots",
+        "connected_bots": "Connected Bots"
     },
     "header": {
         "welcome": "Welcome to the bot management application"
@@ -53,8 +58,10 @@
         "actionTypes": {
             "exec_script": "Run Script",
             "make_screenshot": "Take Screenshot",
-            "screenshot": "Screenshot"
-        }
+            "request_geolocation": "Request Geolocation"
+        },
+        "screenshot": "Screenshot",
+        "geolocation": "Geolocation"
     },
     "payload": {
         "title": "Payload Generator",

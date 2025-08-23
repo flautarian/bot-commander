@@ -27,6 +27,7 @@ public class Bot {
     private String name;
     private Instant lastSignal = Instant.now();
     private String os;
+    private String geolocation;
     private ArrayList<Task> tasks = new ArrayList<>();
 
     public Bot(BotDto botDto) {
@@ -38,5 +39,6 @@ public class Bot {
         for (TaskDto taskDto : botDto.getTasks()) {
             this.tasks.add(new Task(taskDto));
         }
+        this.geolocation = botDto.getGeolocation();
     }
 }

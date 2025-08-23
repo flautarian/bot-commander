@@ -1,10 +1,9 @@
 import { HttpClient } from '@angular/common/http';
-import { ChangeDetectorRef, Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, HostListener, OnInit, Output } from '@angular/core';
 import { ActionDto } from 'models/ActionDto';
 
-import { Utils } from 'utils/utils'; // Import the utility class
+import { Utils } from 'utils/utils';
 import { FormGroup, Validators, FormBuilder } from '@angular/forms';
-import { CurrencyPipe } from '@angular/common';
 import { environment } from 'environments/environment';
 import { BotWebSocketService } from '@services/BotWebSocketService';
 import { ToastrService } from 'ngx-toastr';
@@ -13,6 +12,12 @@ import { UpdateTaskEventDto } from 'models/UpdateTaskEventDto';
 import { ActionTypeDto } from 'models/ActionTypeDto';
 import { HeartBeatEventDto } from 'models/HeartBeatEventDto';
 import { DomSanitizer } from '@angular/platform-browser';
+import { TranslateService } from '@ngx-translate/core';
+import * as L from 'leaflet';
+import 'leaflet.markercluster';
+
+const markerIcon: string = 'assets/marker.png';
+const activeMarkerIcon: string = 'assets/marker-active.png';
 
 @Component({
     selector: 'app-frontpage',
@@ -35,6 +40,10 @@ export class FrontpageComponent implements OnInit {
     isActionModalOpen = false;
     isPayloadGenModalOpen = false;
     allBotsSelected = false;
+    isFloatingMenuOpen = false;
+
+    map: any;
+    markers: any;
 
     @Output() actionSubmitted: EventEmitter<ActionDto> = new EventEmitter<ActionDto>();
 
@@ -55,7 +64,8 @@ export class FrontpageComponent implements OnInit {
         private botWebSocketService: BotWebSocketService,
         private toastr: ToastrService,
         private cdr: ChangeDetectorRef,
-        private sanitizer: DomSanitizer) {
+        private sanitizer: DomSanitizer,
+        public translate: TranslateService) {
         this.paramEntries = this.getFormDataParameterEntries();
     }
 
@@ -98,7 +108,17 @@ export class FrontpageComponent implements OnInit {
                 let index = this.bots.findIndex(bot => bot.id == uteDto.botId);
                 //add result to task index
                 let taskIndex = this.bots[index].tasks.findIndex(task => task.id === uteDto.taskId);
-                this.bots[index].tasks[taskIndex].result = uteDto.result;
+                let bot = this.bots[index];
+                if (!!bot && !!bot.tasks[taskIndex]) {
+                    let task = bot.tasks[taskIndex];
+                    bot.tasks[taskIndex].result = uteDto.result;
+                    if (task.actionType === 'geolocation') {
+                        let newGeolocation = uteDto.result;
+                        if (!!newGeolocation && newGeolocation.split(',').length === 2)
+                            bot.geolocation = update.result;
+                    }
+                }
+
             }
             else if (Utils.instanceOfHeartBeatEventDto(update)) {
                 // pass heart beat event arriving to system
@@ -109,7 +129,68 @@ export class FrontpageComponent implements OnInit {
                     this.bots[index].lastSignal = heartDto.lastSignal;
                 }
             }
+            this.refreshMapPoints();
         });
+
+        setTimeout(() => {
+            this.initMap();
+        }, 0);
+    }
+
+    initMap() {
+        const mapDiv = document.getElementById('map');
+        if (mapDiv && !mapDiv.hasAttribute('data-leaflet-initialized')) {
+            mapDiv.setAttribute('data-leaflet-initialized', 'true');
+            this.map = L.map('map').setView([40.4168, -3.7038], 5); // Centrado en España
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(this.map);
+        }
+    }
+
+    clearMarkers = () => {
+        console.log("Clearing markers, current size: " + (this.markers ? this.markers.getLayers().length : 0));
+        if (this.markers)
+            this.markers.clearLayers();
+        console.log("Markers clear, new size: " + (this.markers ? this.markers.getLayers().length : 0));
+    }
+
+    refreshMapPoints = () => {
+        if (this.bots.length > 0) {
+            // removing all points from map
+            const mapDiv = document.querySelector('#map');
+            if (mapDiv && !!this.map) {
+                // Use marker cluster group from leaflet.markercluster plugin
+                if (!this.markers) {
+                    this.markers = L.featureGroup();
+                    this.map.addLayer(this.markers);
+                }
+                this.clearMarkers();
+
+                // center points on marks created
+                this.bots.forEach((bot: BotDto) => {
+                    let geolocation = bot.geolocation.split(',');
+                    if (bot.geolocation && geolocation.length === 2) {
+                        let lat = parseFloat(geolocation[0]);
+                        let lng = parseFloat(geolocation[1]);
+                        const marker = L.marker([lat, lng]);
+                        let iconUrl = bot.lastSignal >= Date.now() - 5 * 60 * 1000 ? activeMarkerIcon : markerIcon;
+                        marker.setIcon(new L.Icon({
+                            iconUrl: iconUrl, 
+                            className: "marker-icon",
+                            iconSize: [25, 41],
+                            iconAnchor: [13, 41],
+                            popupAnchor: [13, 0]
+                        }));
+                        marker.bindPopup(`<b>${bot.name}</b>`);
+                        marker.addTo(this.markers);
+                    }
+                }
+                );
+                this.map.fitBounds(this.bots.length > 0 ? this.markers.getBounds().pad(0.5) : this.markers.getBounds());
+            }
+        }
     }
 
     submitForm = () => {
@@ -141,6 +222,21 @@ export class FrontpageComponent implements OnInit {
             this.toastr.error("Error detected in fields validation, please check the form and try again");
     }
 
+    deleteBot = (botId: string) => {
+        this.http.delete<any>(`${environment.apiUrl}/bot/${botId}`)
+            .subscribe(
+                data => {
+                    this.toastr.success('Bot deleted', "Bot " + botId + " deleted successfully");
+                    // Remove bot from local list
+                    this.bots = this.bots.filter(bot => bot.id !== botId);
+                },
+                error => {
+                    this.toastr.error('An error occurred', "Error occurred while deleting bot " + botId + ", check console for more information");
+                    console.error('Error:', error);
+                }
+            );
+    }
+
     getFormDataParameterEntries = () => {
         return Array.from(this.formData.parameters.entries());
     }
@@ -170,8 +266,6 @@ export class FrontpageComponent implements OnInit {
     updateMapValue(event: any, key: any) {
         let val = event.target.value;
         this.formData.parameters.set(key, val);
-        /* this.paramEntries = this.getFormDataParameterEntries();
-        this.cdr.detectChanges(); */
     }
 
     selectAllBots = () => {
@@ -217,9 +311,11 @@ export class FrontpageComponent implements OnInit {
         this.filterCurrentBots = !this.filterCurrentBots;
     }
 
-    getCurrentBots = () => {
-        if (!this.filterCurrentBots)
-            return this.bots;
+    getBots = () => {
+        return this.bots;
+    }
+
+    getActiveBots = () => {
         return this.bots.filter((bot: BotDto) => bot.lastSignal >= Date.now() - 5 * 60 * 1000);
     }
 
@@ -397,5 +493,22 @@ export class FrontpageComponent implements OnInit {
                     console.error('Error:', error);
                 }
             );
+    }
+
+    switchLanguage() {
+        this.translate.use(this.translate.currentLang === 'es-ES' ? 'en-US' : 'es-ES');
+    }
+
+    @HostListener('document:click', ['$event'])
+    onDocumentClick(event: MouseEvent) {
+        const target = event.target as HTMLElement;
+        // Si el menú está abierto y el clic no fue dentro del menú ni en el botón trigger
+        if (
+            this.isFloatingMenuOpen &&
+            !target.closest('.floating-menu') &&
+            !target.closest('.floating-menu-trigger')
+        ) {
+            this.isFloatingMenuOpen = false;
+        }
     }
 }

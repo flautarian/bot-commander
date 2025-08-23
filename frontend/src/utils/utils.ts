@@ -18,6 +18,12 @@ export class Utils {
             description: 'utils.actionTypes.make_screenshot_desc',
             value: 'screenshot',
             parameters: new Map<string, any>([])
+        },
+        {
+            name: 'utils.actionTypes.request_geolocation',
+            description: 'utils.actionTypes.request_geolocation_desc',
+            value: 'geolocation',
+            parameters: new Map<string, any>([])
         }];
     }
 

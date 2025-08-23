@@ -8,12 +8,17 @@
         "bot_os": "Sistema operativo del bot",
         "bot_last_signal": "Última señal",
         "bot_actions": "Informe de acciones",
+        "bot_actions_create_task_btn": "Crear Tarea",
+        "create_payload_btn": "Crear payload",
+        "bot_actions_delete_btn": "Eliminar",
         "bot_actions_btn": "Ver Acciones",
         "create_actions_btn": "Crear acción",
         "toggle_only-current_bots_on_btn": "Mostrar bots actualizados",
         "toggle_only-current_bots_off_btn": "Mostrar todos los bots",
         "submit_action_btn": "Aplicar acción",
-        "submit_generate_payload_btn": "Generar Payload"
+        "submit_generate_payload_btn": "Generar Payload",
+        "total_bots": "Total de Bots",
+        "connected_bots": "Bots Conectados"
     },
     "header": {
         "welcome": "Bienvenido a la aplicación de gestión de bots"
@@ -54,8 +59,10 @@
         "actionTypes":{
             "exec_script": "Ejecutar Script",
             "make_screenshot": "Hacer captura de pantalla",
-            "screenshot": "Captura de pantalla"
-        }
+            "request_geolocation": "Solicitar geolocalización"
+        },
+        "screenshot": "Captura de pantalla",
+        "geolocation": "Geolocalización"
     },
     "payload": {
         "title": "Generador de Payload",

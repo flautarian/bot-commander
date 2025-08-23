@@ -29,7 +29,6 @@ import com.giacconidev.botcommander.backend.model.Bot;
 import com.giacconidev.botcommander.backend.model.Task;
 import com.giacconidev.botcommander.backend.repository.BotRepository;
 import com.giacconidev.botcommander.backend.utils.Utils;
-
 import reactor.core.publisher.Flux;
 
 @Service
@@ -100,7 +99,7 @@ public class BotService {
      * @param name  the name of the bot
      * @return a BotDto representing the initialized or refreshed bot
      */
-    public BotDto InitializeOrRefreshBot(String botId, String os, String name) {
+    public BotDto InitializeOrRefreshBot(String botId, String os, String name, String geolocation) {
         Bot bot = botRepository.findById(botId).block();
         if (Objects.nonNull(bot)) {
             // refresh last signal
@@ -111,6 +110,9 @@ public class BotService {
             // refresh os name
             if (Objects.nonNull(name))
                 bot.setName(name);
+            // refresh geolocation
+            if (Objects.nonNull(geolocation))
+                bot.setGeolocation(geolocation);
             // save bot
             botRepository.save(bot).block();
         } else {
@@ -120,10 +122,21 @@ public class BotService {
             bot.setName(name != null ? name : Utils.generateRandomName());
             bot.setOs(os != null ? os : "Unknown");
             bot.setLastSignal(Instant.now());
+            bot.setGeolocation(geolocation != null ? geolocation : "Unknown");
             // save bot
             botRepository.save(bot).block();
         }
         return new BotDto(bot);
+    }
+
+    /**
+     * Deletes the bot with the given botId from the database.
+     * 
+     * @param botId the ID of the bot to delete
+     */
+    public void deleteBot(String botId) {
+        botRepository.deleteById(botId).block();
+
     }
 
     /**
@@ -144,6 +157,13 @@ public class BotService {
             }
             // refresh last signal
             bot.setLastSignal(Instant.now());
+
+            // if task was to refresh geolocation we set as new bot geolocation
+            if ("geolocation".equals(task.getActionType())) {
+                bot.setGeolocation(result);
+                botRepository.save(bot).block();
+            }
+
             // save bot
             botRepository.save(bot).block();
         }

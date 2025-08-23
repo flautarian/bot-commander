@@ -1,51 +1,58 @@
-<div class="container">
-  <!-- BOTS LIST -->
-  <div class="bot-container">
-    <h2>{{"app.title" | translate}}</h2>
-    <h3>{{"app.description" | translate}}</h3>
-    <div class="bot-inner-container">
-      <div class="bot-inner-header">
-        <h3>{{"app.bot_list" | translate}}</h3>
-        <!-- button to limit the results only to the last 5 min in task.lastSignal -->
-        <button class="toggle-botlist-btn" (click)="toggleResultsTimeLimit()">
-          {{ (filterCurrentBots ? "app.toggle_only-current_bots_on_btn" : "app.toggle_only-current_bots_off_btn") |
-          translate }}
-        </button>
-        <!-- right button to open modal -->
-        <button class="create-payload-btn" (click)="openPayloadGenModal()">
-          {{ "app.create_actions_btn" | translate }}
-        </button>
-      </div>
-      <div class="bot-list-container">
-        <table class="bot-list">
-          <thead>
-            <tr class="bot-list-header">
-              <th style="width: 10%;"><input type="checkbox" (click)="selectAllBots()" [(ngModel)]="allBotsSelected">
-              </th>
-              <th>{{"app.bot_name" | translate}}</th>
-              <th style="width: 20%;">{{"app.bot_os" | translate}}</th>
-              <th style="width: 20%;">{{"app.bot_last_signal" | translate}}</th>
-              <th>{{"app.bot_actions" | translate}}</th>
-            </tr>
-          </thead>
-          <tbody class="bot-list-body">
-            <tr *ngFor="let bot of getCurrentBots()">
-              <td style="width: 10%;"><input type="checkbox" (click)="selectBot(bot.id)"
-                  [checked]="formData.selectedBots.includes(bot.id)">
-              </td>
-              <td>{{bot.id}}</td>
-              <td style="width: 20%;">{{bot.name || 'unknown'}}</td>
-              <td style="width: 20%;">{{ bot.lastSignal | date :'dd/MM/yyyy HH:mm' }}</td>
-              <td>
-                <button (click)="openActionsModal(bot.id)">{{ "app.bot_actions_btn" | translate }}</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+<div class="parent">
+  <div class="div1">
+    <div class="div1-summary-container">
+      <span>
+        {{ "app.total_bots" | translate }}: {{ getBots().length }}
+      </span>
+      <span>
+        {{ "app.connected_bots" | translate }}: {{ getActiveBots().length }}
+      </span>
+    </div>
+    <button class="create-payload-btn" (click)="openPayloadGenModal();">
+      {{ "app.create_payload_btn" | translate }}
+    </button>
+  </div>
+  <div class="div2">
+    <div id="map" style="height: 100%; width: 100%;"></div>
+  </div>
+  <div class="div3">
+    <div class="table-btn-menu">
+      <button class="toggle-botlist-btn" (click)="toggleResultsTimeLimit();">
+        {{ (filterCurrentBots ? "app.toggle_only-current_bots_on_btn" : "app.toggle_only-current_bots_off_btn") |
+        translate }}
+      </button>
       <button class="create-action-btn" (click)="openModal()" [disabled]="formData.selectedBots.length === 0">{{
         "app.create_actions_btn" | translate }}</button>
     </div>
+
+    <table class="bot-list">
+      <thead>
+        <tr class="bot-list-header">
+          <th style="width: 10%;"><input type="checkbox" (click)="selectAllBots()" [(ngModel)]="allBotsSelected">
+          </th>
+          <th>{{"app.bot_name" | translate}}</th>
+          <th style="width: 20%;">{{"app.bot_os" | translate}}</th>
+          <th style="width: 20%;">{{"app.bot_last_signal" | translate}}</th>
+          <th>{{"app.bot_actions" | translate}}</th>
+        </tr>
+      </thead>
+      <tbody class="bot-list-body">
+        <tr *ngFor="let bot of filterCurrentBots ? getActiveBots() : getBots()">
+          <td style="width: 10%;"><input type="checkbox" (click)="selectBot(bot.id)"
+              [checked]="formData.selectedBots.includes(bot.id)">
+          </td>
+          <td>{{bot.id}}</td>
+          <td style="width: 20%;">{{bot.name || 'unknown'}}</td>
+          <td style="width: 20%;">{{ bot.lastSignal | date :'dd/MM/yyyy HH:mm' }}</td>
+          <td style="display: flex; justify-content: space-evenly;">
+            <button (click)="openActionsModal(bot.id)">{{ "app.bot_actions_btn" | translate }}</button>
+            <button (click)="deleteBot(bot.id)">{{ "app.bot_actions_delete_btn" | translate }}</button>
+            <button (click)="formData.selectedBots = [bot.id]; openModal();">{{ "app.bot_actions_create_task_btn" |
+              translate }}</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 </div>
 
@@ -120,7 +127,8 @@
                   </div>
                 </ng-container>
               </ng-container>
-              <ng-container *ngIf="!task.result || task.actionType == 'exec_script'">
+              <ng-container
+                *ngIf="!task.result || task.actionType == 'exec_script' || task.actionType == 'geolocation'">
                 {{ task.result || 'No result returned' }}
               </ng-container>
             </td>

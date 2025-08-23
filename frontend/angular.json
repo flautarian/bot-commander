@@ -30,7 +30,8 @@
             ],
             "styles": [
               "src/styles.css",
-              "src/toast.css"
+              "src/toast.css",
+              "node_modules/leaflet/dist/leaflet.css"
             ],
             "scripts": []
           },

