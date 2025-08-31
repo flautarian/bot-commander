@@ -1,6 +1,8 @@
 package com.giacconidev.botcommander.backend.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.giacconidev.botcommander.backend.dto.BotDto;
 
 import org.slf4j.Logger;
@@ -27,7 +29,7 @@ public class BotCommanderSocketHandler implements WebSocketHandler {
 
     private final BotService botService;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = JsonMapper.builder().addModule(new JavaTimeModule()).build();
 
     public BotCommanderSocketHandler(BotService botService) {
         this.botService = botService;

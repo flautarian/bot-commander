@@ -80,6 +80,10 @@ public class BotService {
         // find bot by id
         Bot bot = botRepository.findById(botId).block();
         if (Objects.nonNull(bot)) {
+            // limit to 15 tasks in db for each bot, rolling the old ones if necessary
+            if (bot.getTasks().size() >= 15)
+                bot.getTasks().remove(0);
+                
             // add new task to bot
             Task task = new Task(input.getId(), input.getActionType(), input.getParameters(), input.getResult());
             bot.getTasks().add(task);
@@ -99,31 +103,17 @@ public class BotService {
      * @param name  the name of the bot
      * @return a BotDto representing the initialized or refreshed bot
      */
-    public BotDto InitializeOrRefreshBot(String botId, String os, String name, String geolocation) {
-        Bot bot = botRepository.findById(botId).block();
+    public BotDto InitializeOrRefreshBot(BotDto botDto) {
+        Bot bot = botRepository.findById(botDto.getId()).block();
         if (Objects.nonNull(bot)) {
-            // refresh last signal
-            bot.setLastSignal(Instant.now());
-            // refresh os platform
-            if (Objects.nonNull(os))
-                bot.setOs(os);
-            // refresh os name
-            if (Objects.nonNull(name))
-                bot.setName(name);
-            // refresh geolocation
-            if (Objects.nonNull(geolocation))
-                bot.setGeolocation(geolocation);
-            // save bot
+            // Refresh data
+            bot.refreshData(botDto);
+            // Save bot
             botRepository.save(bot).block();
         } else {
-            // create new bot
-            bot = new Bot();
-            bot.setId(botId);
-            bot.setName(name != null ? name : Utils.generateRandomName());
-            bot.setOs(os != null ? os : "Unknown");
-            bot.setLastSignal(Instant.now());
-            bot.setGeolocation(geolocation != null ? geolocation : "Unknown");
-            // save bot
+            // Create new bot
+            bot = new Bot(botDto);
+            // Save bot
             botRepository.save(bot).block();
         }
         return new BotDto(bot);
@@ -184,7 +174,7 @@ public class BotService {
      * @param bots the list of bots to update
      */
     public void updateBots(List<Bot> bots) {
-        botRepository.saveAll(bots);
+        botRepository.saveAll(bots).blockLast();
     }
 
     /**

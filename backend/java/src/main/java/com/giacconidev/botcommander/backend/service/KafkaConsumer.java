@@ -11,11 +11,12 @@ import com.giacconidev.botcommander.backend.dto.HeartBeatEventDto;
 import com.giacconidev.botcommander.backend.dto.TaskDto;
 import com.giacconidev.botcommander.backend.dto.UpdateTaskEventDto;
 
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Service
-@Profile("!test") 
+@Profile("!test")
 public class KafkaConsumer {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConsumer.class);
@@ -35,7 +36,7 @@ public class KafkaConsumer {
         try {
             TaskDto task = objectMapper.readValue(message, TaskDto.class);
             // Process the task
-            if(task.getActionType().equals("callback")) {
+            if (task.getActionType().equals("callback")) {
                 // Handle the init action
                 String taskId = task.getParameters().get("taskId");
                 String botId = task.getParameters().get("groupId");
@@ -51,8 +52,7 @@ public class KafkaConsumer {
             }
         } catch (JsonProcessingException e) {
             LOGGER.error("Error processing message: " + e.getMessage());
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             LOGGER.error("Fatal error processing message: " + e.getMessage());
         }
     }
@@ -63,21 +63,21 @@ public class KafkaConsumer {
         try {
             TaskDto task = objectMapper.readValue(message, TaskDto.class);
             // Process the task
-            if(task.getActionType().equals("heartbeat")) {
+            if (task.getActionType().equals("heartbeat")) {
                 // Handle the init action
                 String botId = task.getParameters().get("botId");
                 LOGGER.info("Bot: " + botId + " given life signals");
                 // Update bot
-                BotDto result = botService.InitializeOrRefreshBot(botId, null, null, null);
+                BotDto result = botService.InitializeOrRefreshBot(new BotDto(botId));
                 // Notify all connected clients
-                botCommanderSocketHandler.broadcastUpdate(new HeartBeatEventDto(result.getId(), result.getLastSignal()));
+                botCommanderSocketHandler
+                        .broadcastUpdate(new HeartBeatEventDto(result.getId(), result.getLastSignal()));
             } else {
                 LOGGER.warn("Unknown action type: " + task.getActionType());
             }
         } catch (JsonProcessingException e) {
             LOGGER.error("Error processing message: " + e.getMessage());
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             LOGGER.error("Fatal error processing message: " + e.getMessage());
         }
     }
@@ -88,14 +88,15 @@ public class KafkaConsumer {
         try {
             TaskDto task = objectMapper.readValue(message, TaskDto.class);
             // Process the task
-            if(task.getActionType().equals("init")) {
+            if (task.getActionType().equals("init")) {
                 // Handle the init action
                 LOGGER.info("Init action received for task: " + task.getId());
                 String botId = task.getParameters().get("groupId");
                 String os = task.getParameters().get("os");
                 String name = task.getParameters().get("name");
                 String geolocation = task.getParameters().get("geolocation");
-                BotDto botResult = botService.InitializeOrRefreshBot(botId, os, name, geolocation);
+                String payload = task.getParameters().get("payloadType");
+                BotDto botResult = botService.InitializeOrRefreshBot(new BotDto(botId, name, os, geolocation, payload));
                 // Notify all connected clients
                 botCommanderSocketHandler.broadcastUpdate(botResult);
             } else {
@@ -103,8 +104,7 @@ public class KafkaConsumer {
             }
         } catch (JsonProcessingException e) {
             LOGGER.error("Error processing message: " + e.getMessage());
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             LOGGER.error("Fatal error processing message: " + e.getMessage());
         }
     }

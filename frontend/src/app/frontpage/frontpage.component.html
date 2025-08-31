@@ -1,28 +1,55 @@
 <div class="parent">
   <div class="div1">
-    <div class="div1-summary-container">
+    <span class="span-title">
+      <h3>{{ "app.title" | translate }}</h3>
+    </span>
+    <div class="bots-summary-container">
       <span>
         {{ "app.total_bots" | translate }}: {{ getBots().length }}
       </span>
       <span>
-        {{ "app.connected_bots" | translate }}: {{ getActiveBots().length }}
+        {{ "app.connected_bots" | translate }}: {{ getBots("active").length }}
       </span>
+    </div>
+    <div class="chart-container">
+      <div class="chart-wrapper">
+        <canvas id="osChart"></canvas>
+      </div>
+      <div class="chart-wrapper">
+        <canvas id="payloadTypeChart"></canvas>
+      </div>
     </div>
     <button class="create-payload-btn" (click)="openPayloadGenModal();">
       {{ "app.create_payload_btn" | translate }}
     </button>
+
   </div>
   <div class="div2">
     <div id="map" style="height: 100%; width: 100%;"></div>
   </div>
   <div class="div3">
     <div class="table-btn-menu">
-      <button class="toggle-botlist-btn" (click)="toggleResultsTimeLimit();">
-        {{ (filterCurrentBots ? "app.toggle_only-current_bots_on_btn" : "app.toggle_only-current_bots_off_btn") |
-        translate }}
-      </button>
-      <button class="create-action-btn" (click)="openModal()" [disabled]="formData.selectedBots.length === 0">{{
-        "app.create_actions_btn" | translate }}</button>
+      <div style="display: flex; column-gap: 10px;">
+        <select id="activity-filter" [(ngModel)]="activityFilter" (change)="updateBotFilter($event)">
+          <option value="all">{{"app.select_activity_all_bots" | translate }}</option>
+          <option value="active">{{"app.select_activity_active_bots" | translate }}</option>
+          <option value="last-hour">{{"app.select_activity_active_last_hour_bots" | translate }}</option>
+        </select>
+
+        <select id="os-filter" [(ngModel)]="botFilter" (change)="updateBotFilter($event)">
+          <option value="all">{{"app.select_os_all_bots" | translate }}</option>
+          <option value="windows">{{"app.select_only_active_windows_bots" | translate }}</option>
+          <option value="linux">{{"app.select_only_active_linux_bots" | translate }}</option>
+          <option value="mac">{{"app.select_only_active_mac_bots" | translate }}</option>
+          <option value="other">{{"app.select_only_active_other_bots" | translate }}</option>
+        </select>
+      </div>
+      <div style="display: flex; column-gap: 10px;">
+        <button class="create-action-btn" (click)="openModal()" [disabled]="formData.selectedBots.length === 0">{{
+          "app.create_actions_btn" | translate }}</button>
+        <button class="create-process-btn" (click)="openProcessModal()">{{
+          "app.create_process_btn" | translate }}</button>
+      </div>
     </div>
 
     <table class="bot-list">
@@ -30,24 +57,25 @@
         <tr class="bot-list-header">
           <th style="width: 10%;"><input type="checkbox" (click)="selectAllBots()" [(ngModel)]="allBotsSelected">
           </th>
-          <th>{{"app.bot_name" | translate}}</th>
-          <th style="width: 20%;">{{"app.bot_os" | translate}}</th>
+          <th style="width: 20%;">{{"app.bot_name" | translate}}</th>
+          <th>{{"app.bot_os" | translate}}</th>
           <th style="width: 20%;">{{"app.bot_last_signal" | translate}}</th>
           <th>{{"app.bot_actions" | translate}}</th>
         </tr>
       </thead>
       <tbody class="bot-list-body">
-        <tr *ngFor="let bot of filterCurrentBots ? getActiveBots() : getBots()">
+        <tr *ngFor="let bot of getBots()">
           <td style="width: 10%;"><input type="checkbox" (click)="selectBot(bot.id)"
               [checked]="formData.selectedBots.includes(bot.id)">
           </td>
-          <td>{{bot.id}}</td>
           <td style="width: 20%;">{{bot.name || 'unknown'}}</td>
+          <td>{{bot.os}}</td>
           <td style="width: 20%;">{{ bot.lastSignal | date :'dd/MM/yyyy HH:mm' }}</td>
           <td style="display: flex; justify-content: space-evenly;">
-            <button (click)="openActionsModal(bot.id)">{{ "app.bot_actions_btn" | translate }}</button>
+            <button (click)="openActionsModal(bot.id)" [disabled]="!bot.tasks || bot.tasks.length == 0">{{
+              "app.bot_actions_btn" | translate }}</button>
             <button (click)="deleteBot(bot.id)">{{ "app.bot_actions_delete_btn" | translate }}</button>
-            <button (click)="formData.selectedBots = [bot.id]; openModal();">{{ "app.bot_actions_create_task_btn" |
+            <button (click)="openModalForSingleBot(bot.id)">{{ "app.bot_actions_create_task_btn" |
               translate }}</button>
           </td>
         </tr>
@@ -58,16 +86,15 @@
 
 <!-- ACTION CREATION MODAL -->
 <div class="modal-overlay" (click)="closeModal()" *ngIf="isModalOpen">
-  <div class="modal-content small-modal-content" (click)="$event.stopPropagation()">
+  <div class="modal-content" style="width: 40dvw;" (click)="$event.stopPropagation()">
     <h2>{{ "app.create_actions_btn" | translate }}</h2>
     <div class="create-action-form-container">
       <form [formGroup]="form" class="create-action-form">
         <div class="flex-column">
           <label for="actionType">{{ "utils.action_type" | translate }}</label>
-          <select id="actionType" formControlName="actionType" [(ngModel)]="formData.actionType"
-            (change)="updateActionType($event)">
+          <select id="actionType" (change)="updateActionTypeSelected($event)">
             <option value="" selected>{{ "utils.select_action_type" | translate }}</option>
-            <option *ngFor="let action of actionTypes" [value]="action.value">{{ action.name | translate }}</option>
+            <option *ngFor="let action of actionTypes; let i = index" [value]="i">{{ action.name | translate }}</option>
           </select>
         </div>
 
@@ -93,6 +120,36 @@
   </div>
 </div>
 
+
+<!-- PROCESS CREATION MODAL -->
+<div class="modal-overlay" (click)="closeProcessModal()" *ngIf="isProcessModalOpen">
+  <div class="modal-content" style="width: 40dvw;" (click)="$event.stopPropagation()">
+    <h2>{{ "app.create_process_btn" | translate }}</h2>
+    <div class="create-action-form-container">
+      <form [formGroup]="processForm" class="create-process-form">
+        <div class="flex-column">
+          <label for="process-form-name">{{ "process.name" | translate }}</label>
+          <input id="process-form-name" type="text" formControlName="name" />
+
+          <label for="process-form-description">{{ "process.description" | translate }}</label>
+          <input id="process-form-description" type="text" formControlName="description" />
+
+          <label for="process-form-parameters">{{ "process.parameters" | translate }}</label>
+          <textarea id="process-form-parameters" type="text" formControlName="parameters"
+            class="text-area-input"></textarea>
+        </div>
+
+        <div class="flex-row flex-space-between">
+          <button (click)="closeProcessModal()" class="close-action-btn">{{ "utils.close" | translate }}</button>
+          <button type="submit" (click)="submitProcessForm()" class="submit-action-btn">{{ "process.create_process" |
+            translate
+            }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <!-- BOT TASKS VIEWER MODAL -->
 <div class="modal-overlay" (click)="closeActionsModal()" *ngIf="isActionModalOpen">
   <div class="modal-content" (click)="$event.stopPropagation()">
@@ -101,19 +158,19 @@
       <table class="task-list-container">
         <thead class="task-list-header">
           <tr class="">
-            <th>{{"utils.action_type" | translate}}</th>
-            <th>{{"utils.parameters" | translate}}</th>
-            <th>{{"utils.result" | translate}}</th>
+            <th style="text-align: center; width: 20%;">{{"utils.action_type" | translate}}</th>
+            <th style="width: 40%;">{{"utils.parameters" | translate}}</th>
+            <th style="width: 40%;">{{"utils.result" | translate}}</th>
           </tr>
         </thead>
         <tbody class="task-list-body">
           <tr *ngFor="let task of selectedBot.tasks">
-            <td style="text-align: center;">{{('utils.actionTypes.' + task.actionType) | translate}}</td>
-            <td>
+            <td style="text-align: center; width: 20%;">{{('utils.actionTypes.' + task.actionType) | translate}}</td>
+            <td style="width: 40%;">
               <pre>{{task.parameters | json}}</pre>
             </td>
             <!-- Display text if result is string but display img if content is base64 format -->
-            <td style="text-align: center;">
+            <td style="text-align: center; width: 40%;">
               <ng-container *ngIf="task.actionType == 'screenshot'">
                 <ng-container *ngIf="checkObjectType(convertResult(task.result)) == 'string' && task.result.length > 0">
                   <img [src]="decodeBase64Img(task.result)" alt="Task Result" class="task-result-image"
@@ -127,9 +184,15 @@
                   </div>
                 </ng-container>
               </ng-container>
+
+              <button
+                *ngIf="task.result.length > 100 && (!task.result || task.actionType == 'exec_script' || task.actionType == 'geolocation')"
+                (click)="openLargeResponseModal(task.result)" class="submit-action-btn" style="width:100%">{{
+                "utils.check_response" | translate
+                }}</button>
               <ng-container
-                *ngIf="!task.result || task.actionType == 'exec_script' || task.actionType == 'geolocation'">
-                {{ task.result || 'No result returned' }}
+                *ngIf="task.result.length < 100 && (!task.result || task.actionType == 'exec_script' || task.actionType == 'geolocation')">
+                {{task.result || 'No result returned'}}
               </ng-container>
             </td>
           </tr>
@@ -145,7 +208,7 @@
 
 <!-- BOT PAYLOAD GENERATOR MODAL -->
 <div class="modal-overlay" (click)="closePayloadGenModal()" *ngIf="isPayloadGenModalOpen">
-  <div class="modal-content small-modal-content" (click)="$event.stopPropagation()">
+  <div class="modal-content" style="width: 40dvw;" (click)="$event.stopPropagation()">
     <h2>{{ "payload.title" | translate }}</h2>
     <div class="create-action-form-container">
       <form [formGroup]="payloadForm" class="generate-payload-form">
@@ -171,5 +234,14 @@
       </form>
 
     </div>
+  </div>
+</div>
+
+<!-- BOT PAYLOAD GENERATOR MODAL -->
+<div class="modal-overlay" (click)="closeLargeResponseModal()" *ngIf="isLargeResponseModalOpen">
+  <div class="modal-content" style="width: 75dvw;" (click)="$event.stopPropagation()">
+    <textarea style="width: 75dvw;height: 75dvh;resize: none;" [innerHTML]="largeResult"></textarea>
+    <button (click)="closeLargeResponseModal()" class="close-action-btn" style="width: 100%;">{{ "utils.close" |
+      translate }}</button>
   </div>
 </div>

@@ -11,11 +11,14 @@ import org.springframework.web.bind.annotation.*;
 
 import com.giacconidev.botcommander.backend.dto.ActionDto;
 import com.giacconidev.botcommander.backend.dto.BotDto;
+import com.giacconidev.botcommander.backend.dto.ProcessDto;
 import com.giacconidev.botcommander.backend.dto.TaskDto;
 import com.giacconidev.botcommander.backend.model.Bot;
 import com.giacconidev.botcommander.backend.service.BotCommanderSocketHandler;
 import com.giacconidev.botcommander.backend.service.BotService;
 import com.giacconidev.botcommander.backend.service.KafkaProducer;
+import com.giacconidev.botcommander.backend.service.ProcessService;
+
 import org.springframework.http.MediaType;
 
 @RestController
@@ -25,13 +28,16 @@ public class MainController {
 
     private KafkaProducer kafkaProducer;
     private BotService botService;
+    private ProcessService processService;
     private BotCommanderSocketHandler botCommanderSocketHandler;
 
     public MainController(KafkaProducer kafkaProducer, BotService botService,
-            BotCommanderSocketHandler botCommanderSocketHandler) {
+            BotCommanderSocketHandler botCommanderSocketHandler,
+            ProcessService processService) {
         this.kafkaProducer = kafkaProducer;
         this.botService = botService;
         this.botCommanderSocketHandler = botCommanderSocketHandler;
+        this.processService = processService;
     }
 
     @PostMapping(value = "/process", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -102,6 +108,29 @@ public class MainController {
     @PostMapping("/payload/download")
     public ResponseEntity<?> downloadPayload(@RequestBody Map<String, String> params) {
         return botService.getPayloadDownload(params);
+    }
+
+    
+    @PostMapping(value = "/createprocess", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Map<String, String>> createProcess(@RequestBody ProcessDto processDto) {
+        Map<String, String> response = new HashMap<>();
+        if (processDto.getActionType() == null || processDto.getActionType().isEmpty()) {
+            response.put("error", "Action type is required");
+            return ResponseEntity.badRequest().body(response);
+        }
+
+        if (processDto.getParameters() == null || processDto.getParameters().isEmpty()) {
+            response.put("error", "Parameters is required");
+            return ResponseEntity.badRequest().body(response);
+        }
+        processService.createProcess(processDto);
+        response.put("status", "OK");
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping(value = "/processes", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<ProcessDto>> getProcesses() {
+        return ResponseEntity.ok(processService.getAllProcesses().collectList().block());
     }
 
 }

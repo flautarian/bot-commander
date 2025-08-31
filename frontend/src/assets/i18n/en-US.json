@@ -1,6 +1,6 @@
 {
     "app": {
-        "title": "Bot Manager",
+        "title": "Connections summary",
         "description": "Application for managing tasks in bots",
         "bot_list": "Active bot list",
         "bot_name": "Bot name",
@@ -12,12 +12,23 @@
         "bot_actions_delete_btn": "Delete",
         "bot_actions_btn": "Check actions",
         "create_actions_btn": "Create action",
+        "create_process_btn": "Create process",
         "toggle_only-current_bots_on_btn": "Display recent alive bots",
         "toggle_only-current_bots_off_btn": "Display all bots",
         "submit_action_btn": "Apply action",
         "submit_generate_payload_btn": "Generate Payload",
         "total_bots": "Total Bots",
-        "connected_bots": "Connected Bots"
+        "connected_bots": "Connected Bots",
+        "select_activity_all_bots": "All bots",
+        "select_activity_active_bots": "All active bots",
+        "select_activity_active_last_hour_bots": "Only last hour active bots",
+        "select_os_all_bots": "All OS",
+        "select_only_active_bots": "Active bots",
+        "select_only_active_windows_bots": "Windows active bots",
+        "select_only_active_linux_bots": "Linux active bots",
+        "select_only_active_mac_bots": "Mac active bots",
+        "select_only_active_other_bots": "Other OS active bots"
+
     },
     "header": {
         "welcome": "Welcome to the bot management application"
@@ -52,6 +63,7 @@
         "add_value": "Add Value",
         "remove_value": "Remove Value",
         "select_action_type": "Select Action Type",
+        "select_payload_type": "Select Payload Type",
         "select_action": "Select Action",
         "value": "Value",
         "order_task": "Order Task",
@@ -61,7 +73,8 @@
             "request_geolocation": "Request Geolocation"
         },
         "screenshot": "Screenshot",
-        "geolocation": "Geolocation"
+        "geolocation": "Geolocation",
+        "check_response": "Check response"
     },
     "payload": {
         "title": "Payload Generator",
@@ -70,5 +83,11 @@
         "select_payload_type": "Select Payload Type",
         "url_target": "Target URL",
         "generate_payload": "Generate Payload"
+    },
+    "process": {
+        "create_process": "Create process",
+        "name": "Name",
+        "description": "Description",
+        "parameters": "Script"
     }
 }

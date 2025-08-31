@@ -1,7 +1,7 @@
 
 {
     "app": {
-        "title": "Gestor de Bots",
+        "title": "Resumen de conexiones",
         "description": "Aplicación para gestionar tareas en bots",
         "bot_list": "Lista de bots activos",
         "bot_name": "Id de bot",
@@ -13,12 +13,22 @@
         "bot_actions_delete_btn": "Eliminar",
         "bot_actions_btn": "Ver Acciones",
         "create_actions_btn": "Crear acción",
+        "create_process_btn": "Crear proceso",
         "toggle_only-current_bots_on_btn": "Mostrar bots actualizados",
         "toggle_only-current_bots_off_btn": "Mostrar todos los bots",
         "submit_action_btn": "Aplicar acción",
         "submit_generate_payload_btn": "Generar Payload",
         "total_bots": "Total de Bots",
-        "connected_bots": "Bots Conectados"
+        "connected_bots": "Bots Conectados",
+        "select_activity_all_bots": "Todos los bots",
+        "select_activity_active_bots": "Todos los bots activos",
+        "select_activity_active_last_hour_bots": "Solo bots activos la ultima hora",
+        "select_os_all_bots": "Todos OS",
+        "select_only_active_bots": "Bots activos",
+        "select_only_active_windows_bots": "Bots activos con Windows",
+        "select_only_active_linux_bots": "Bots activos con Linux",
+        "select_only_active_mac_bots": "Bots activos con MacOS",
+        "select_only_active_other_bots": "Bots activos con otros sistemas"
     },
     "header": {
         "welcome": "Bienvenido a la aplicación de gestión de bots"
@@ -52,6 +62,7 @@
         "action": "Acción",
         "add_value": "Agregar Valor",
         "select_action_type": "Seleccionar Tipo de Acción",
+        "select_payload_type": "Seleccionar Tipo de Payload",
         "select_action": "Seleccionar Acción",
         "value": "Valor",
         "remove_value": "Eliminar Valor",
@@ -62,7 +73,8 @@
             "request_geolocation": "Solicitar geolocalización"
         },
         "screenshot": "Captura de pantalla",
-        "geolocation": "Geolocalización"
+        "geolocation": "Geolocalización",
+        "check_response": "Ver respuesta"
     },
     "payload": {
         "title": "Generador de Payload",
@@ -71,5 +83,11 @@
         "select_payload_type" : "Seleccionar Tipo de Payload",
         "url_target" : "URL de destino",
         "generate_payload": "Generar Payload"
+    },
+    "process": {
+        "create_process": "Crear proceso",
+        "name": "Nombre",
+        "description": "Descripción",
+        "parameters": "Script"
     }
 }

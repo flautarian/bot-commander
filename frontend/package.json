@@ -21,6 +21,7 @@
     "@ngx-translate/core": "^16.0.4",
     "@ngx-translate/http-loader": "^16.0.1",
     "@types/leaflet.markercluster": "^1.5.5",
+    "chart.js": "^4.5.0",
     "leaflet": "^1.9.4",
     "leaflet.markercluster": "^1.5.3",
     "ngx-toastr": "^19.0.0",

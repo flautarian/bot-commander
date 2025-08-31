@@ -13,11 +13,4 @@ class ApplicationTests {
 	@Test
 	void contextLoads() {
 	}
-	
-	@Test
-	void testSimpleCalculation() {
-		assertEquals(2, 1 + 1);
-		assertEquals(5, 2 + 3);
-		assertNotEquals(3, 1 + 1);
-	}
 }

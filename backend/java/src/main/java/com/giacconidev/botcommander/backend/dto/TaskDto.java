@@ -1,5 +1,6 @@
 package com.giacconidev.botcommander.backend.dto;
 
+import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 
@@ -23,6 +24,9 @@ public class TaskDto {
 
     @JsonProperty("parameters")
     private Map<String, String> parameters;
+    
+    @JsonProperty("creationDate")
+    private Instant creationDate = Instant.now();
 
     @JsonProperty("result")
     private String result;

