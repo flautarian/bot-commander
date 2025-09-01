@@ -240,7 +240,7 @@
 <!-- BOT PAYLOAD GENERATOR MODAL -->
 <div class="modal-overlay" (click)="closeLargeResponseModal()" *ngIf="isLargeResponseModalOpen">
   <div class="modal-content" style="width: 75dvw;" (click)="$event.stopPropagation()">
-    <textarea style="width: 75dvw;height: 75dvh;resize: none;" [innerHTML]="largeResult"></textarea>
+    <textarea style="width: 75dvw;height: 75dvh;resize: none; font-family:monospace" [innerHTML]="largeResult"></textarea>
     <button (click)="closeLargeResponseModal()" class="close-action-btn" style="width: 100%;">{{ "utils.close" |
       translate }}</button>
   </div>
