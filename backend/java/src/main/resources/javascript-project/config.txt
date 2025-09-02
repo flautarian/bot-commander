@@ -1,3 +1,2 @@
 bootstrap_servers=localhost:9093
 topic=apps
-bot_id=ad696978-166a-4f19-b027-eefffb539a88
