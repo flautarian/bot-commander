@@ -77,6 +77,7 @@ services:
       - "8090:8090"
     environment:
       KAFKA_BOOTSTRAP_SERVERS: commander-kafka:9092
+      KAFKA_PAYLOAD_URL: localhost:9093
       SPRING_DATA_MONGODB_URI: mongodb://botUser:botPassword@commander-db:27017/botCommander
       KAFKA_CONSUMER_GROUP_ID: apps
       KAFKA_AUTO_OFFSET_RESET: earliest

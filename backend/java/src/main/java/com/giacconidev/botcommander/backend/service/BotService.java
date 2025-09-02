@@ -38,8 +38,8 @@ public class BotService {
     private BotRepository botRepository;
 
     // spring.kafka.consumer.bootstrap-servers variable
-    @Value("${spring.kafka.consumer.bootstrap-servers}")
-    private String kafkaConsumerBootstrapServer;
+    @Value("${spring.kafka_payload_url}")
+    private String kafkaPayloadUrl;
 
     private ArrayList<String> bannedFiles = null;
 
@@ -165,7 +165,7 @@ public class BotService {
      * @return the URL of the Kafka consumer bootstrap server
      */
     public String getPayloadUrl() {
-        return kafkaConsumerBootstrapServer;
+        return kafkaPayloadUrl;
     }
 
     /**
@@ -221,7 +221,7 @@ public class BotService {
 
     private void addConfigEntryToZip(Map<String, String> params, ZipOutputStream zos) throws IOException {
         String configContent = "bootstrap_servers=" + params.get("payloadUrl") + "\n" +
-                "topic=apps\n";
+                "topic=apps";
         // Add a file called config file to the ZIP
         ZipEntry configEntry = new ZipEntry("config.txt");
         // add configContent content to the config file
